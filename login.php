@@ -15,7 +15,7 @@
 | copyright header is strictly prohibited without
 | written permission from the original author(s).
 +--------------------------------------------------------*/
-require_once "maincore.php";
+require_once dirname(__FILE__).'/maincore.php';
 require_once THEMES."templates/header.php";
 require_once THEMES."templates/global/login.php";
 $locale = fusion_get_locale();
@@ -88,7 +88,7 @@ if (!iMEMBER) {
         default:
             $placeholder = $locale['global_101a'];
     }
-    $info = array(
+    $info = [
         'open_form'            => openform('loginpageform', 'POST', fusion_get_settings('opening_page')),
         'user_name'            => form_text('user_name', $placeholder, isset($_POST['user_name']) ? $_POST['user_name'] : '', ['placeholder' => $placeholder]),
         'user_pass'            => form_text('user_pass', $locale['global_102'], '', ['placeholder' => $locale['global_102'], 'type' => 'password']),
@@ -98,7 +98,7 @@ if (!iMEMBER) {
         'registration_link'    => (fusion_get_settings('enable_registration')) ? strtr($locale['global_105'], ['[LINK]' => "<a href='".BASEDIR."register.php'>\n", '[/LINK]' => "</a>\n"]) : '',
         'forgot_password_link' => strtr($locale['global_106'], ['[LINK]' => "<a href='".BASEDIR."lostpassword.php'>\n", '[/LINK]' => "</a>\n",]),
         'close_form'           => closeform()
-    );
+    ];
 }
 display_loginform($info);
 require_once THEMES."templates/footer.php";

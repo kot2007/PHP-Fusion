@@ -179,10 +179,16 @@ if (column_exists('forums', 'forum_attach')) {
 if (column_exists('forums', 'forum_attach_download')) {
     $inf_altertable[] = $db_prefix."forums CHANGE forum_attach_download forum_attach_download TINYINT(4) DEFAULT '".USER_LEVEL_MEMBER."'";
 }
+
 // Update existing records and change level accesses to new user groups values
-$result = dbquery("SELECT forum_id, forum_access, forum_reply, forum_vote, forum_poll, forum_attach, forum_attach_download FROM ".$db_prefix."forums");
-if (dbrows($result) > 0) {
+$forum_index = dbquery_tree($db_prefix.'forums', 'forum_id', 'forum_cat');
+$result = dbquery("SELECT forum_id, forum_cat, forum_type, forum_post, forum_access, forum_reply, forum_vote, forum_poll, forum_attach, forum_attach_download, forum_mods FROM ".$db_prefix."forums");
+if (dbrows($result)) {
     while ($data = dbarray($result)) {
+        // Update new access levels for forum_post
+        if ($data['forum_post']) {
+            $inf_updatedbrow[] = $db_prefix."forums SET forum_post ='-".$data['forum_post']."' WHERE forum_id='".$data['forum_id']."'";
+        }
         // Update new access levels for forum_access
         if ($data['forum_access']) {
             $inf_updatedbrow[] = $db_prefix."forums SET forum_access ='-".$data['forum_access']."' WHERE forum_id='".$data['forum_id']."'";
@@ -207,6 +213,36 @@ if (dbrows($result) > 0) {
         if ($data['forum_attach_download']) {
             $inf_updatedbrow[] = $db_prefix."forums SET forum_attach_download ='-".$data['forum_attach_download']."' WHERE forum_id='".$data['forum_id']."'";
         }
+        // Update forum_branch as base branch if forum_cat is 0
+        if (!$data['forum_cat']) {
+            $inf_updatedbrow[] = $db_prefix."forums SET forum_branch='".$data['forum_id']."' WHERE forum_id='".$data['forum_id']."'";
+        } else {
+            $root = get_root($forum_index, $data['forum_id']);
+            $inf_updatedbrow[] = $db_prefix."forums SET forum_branch='".$root."' WHERE forum_id='".$data['forum_id']."'";
+        }
+
+        // Update new access levels for forum moderators
+        if (!empty($data['forum_mods'])) {
+            $current_mods = array();
+            $data['forum_mods'] = explode('.', $data['forum_mods']);
+            foreach ($data['forum_mods'] as $mods) {
+                switch ($mods) {
+                    case '103':
+                        $current_mods[] = USER_LEVEL_SUPER_ADMIN;
+                        break;
+                    case '102':
+                        $current_mods[] = USER_LEVEL_ADMIN;
+                        break;
+                    case '101':
+                        $current_mods[] = USER_LEVEL_PUBLIC;
+                        break;
+                    default:
+                        $current_mods[] = $mods;
+                }
+            }
+            $data['forum_mods'] = implode('.', $current_mods);
+            $inf_updatedbrow[] = $db_prefix."forums SET forum_mods='".$data['forum_mods']."' WHERE forum_id='".$data['forum_id']."'";
+        }
     }
 
     /*
@@ -214,8 +250,23 @@ if (dbrows($result) > 0) {
      * Change old forums already inside a group to be a forum containing threads
      * This makes all existing threads accessible both in forums and in panels after upgrade
      */
-    $inf_updatedbrow[] = $db_prefix."forums SET forum_type = 2 WHERE forum_cat != 0";
+    $inf_updatedbrow[] = $db_prefix."forums SET forum_type='1' WHERE forum_cat='0'";
+    $inf_updatedbrow[] = $db_prefix."forums SET forum_type='2' WHERE forum_cat>'0'";
 }
+
+// Update the forums with lastpost information
+$select = dbquery("SELECT forum_id FROM ".$db_prefix."forums ORDER BY forum_id ASC");
+if (dbrows($select)) {
+    while ($data = dbarray($select)) {
+        $select2 = dbquery("SELECT * FROM ".$db_prefix."forum_threads WHERE forum_id='".$data['forum_id']."' ORDER BY thread_lastpost DESC LIMIT 1");
+        if (dbrows($select2)) {
+            while ($subData = dbarray($select2)) {
+                $inf_updatedbrow[] = $db_prefix."forums SET forum_lastpost='".$subData['thread_lastpost']."', forum_lastpostid='".$subData['thread_lastpostid']."', forum_lastuser='".$subData['thread_lastuser']."' WHERE forum_id='".$subData['forum_id']."'";
+            }
+        }
+    }
+}
+
 /*
  * Modify Forum Ranks Table
  */
@@ -357,6 +408,7 @@ if (!empty($enabled_languages)) {
     $inf_insertdbrow[] = DB_SITE_LINKS." (link_name, link_url, link_visibility, link_position, link_window, link_order, link_status, link_language) VALUES('{last_id}', '".$locale['setup_3322']."', 'infusions/forum/index.php?section=unanswered', '0', '2', '0', '5', '1', '".LANGUAGE."')";
     $inf_insertdbrow[] = DB_SITE_LINKS." (link_name, link_url, link_visibility, link_position, link_window, link_order, link_status, link_language) VALUES('{last_id}', '".$locale['setup_3323']."', 'infusions/forum/index.php?section=unsolved', '0', '2', '0', '6', '1', '".LANGUAGE."')";
 }
+
 // Admin links
 $inf_adminpanel[] = array(
     "image"  => $inf_image,

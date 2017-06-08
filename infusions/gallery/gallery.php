@@ -16,8 +16,8 @@
 | copyright header is strictly prohibited without
 | written permission from the original author(s).
 +--------------------------------------------------------*/
-require_once file_exists('maincore.php') ? 'maincore.php' : __DIR__."/../../maincore.php";
-if (!db_exists(DB_PHOTO_ALBUMS)) {
+require_once dirname(__FILE__).'/../../maincore.php';
+if (!infusion_exists('gallery')) {
     redirect(BASEDIR."error.php?code=404");
 }
 require_once THEMES."templates/header.php";
@@ -219,9 +219,8 @@ if (isset($_GET['photo_id']) && isnum($_GET['photo_id'])) {
                 $info['album_stats'] .= $locale['423']." ".profile_link($latest_update['user_id'], $latest_update['user_name'], $latest_update['user_status'])." ".$locale['424']." ".showdate("longdate", $latest_update['photo_datestamp'])."\n";
                 $result = dbquery("SELECT tp.*,
 					tu.user_id, tu.user_name, tu.user_status, tu.user_avatar,
-					SUM(tr.rating_vote) 'sum_rating',
-					COUNT(tr.rating_vote) 'count_rating',
-					COUNT(tr.rating_item_id) 'count_votes'
+					SUM(tr.rating_vote) AS 'sum_rating',
+					COUNT(tr.rating_vote) AS 'count_rating'
 					FROM ".DB_PHOTOS." tp
 					LEFT JOIN ".DB_USERS." tu ON tp.photo_user=tu.user_id
 					LEFT JOIN ".DB_RATINGS." tr ON tr.rating_item_id = tp.photo_id AND tr.rating_type='P'
@@ -259,12 +258,14 @@ if (isset($_GET['photo_id']) && isnum($_GET['photo_id'])) {
                             );
                         }
                         if ($data['photo_allow_comments']) {
+                        	$count_v = sum_db($data['photo_id'], 'P');
+                        	$count_c = count_db($data['photo_id'], 'P');
                             $data += array(
-                                "photo_votes"    => $data['count_votes'] > 0 ? $data['count_votes'] : '0',
+                                "photo_votes"    => $count_v > 0 ? $count_v : '0',
                                 "photo_comments" => array(
                                     'link' => $data['photo_link']['link'].'#comments',
-                                    'name' => $data['count_votes'],
-                                    'word' => format_word($data['count_votes'], $locale['fmt_comment'])
+                                    'name' => $count_c,
+                                    'word' => format_word($count_c, $locale['fmt_comment'])
                                 )
                             );
                         }
@@ -323,7 +324,7 @@ if (isset($_GET['photo_id']) && isnum($_GET['photo_id'])) {
                         "name" => $locale['edit']
                     );
                     $data['album_delete'] = array(
-                        "link" => INFUSIONS."gallery/gallery_admin.php".$aidlink."&amp;section=album_form&amp;action=delete&amp;cat_id=".$data['album_id'],
+                        "link" => INFUSIONS."gallery/gallery_admin.php".$aidlink."&amp;section=actions&amp;action=delete&amp;cat_id=".$data['album_id'],
                         "name" => $locale['delete']
                     );
                 }
@@ -354,6 +355,22 @@ if (isset($_GET['photo_id']) && isnum($_GET['photo_id'])) {
         }
         render_gallery($info);
     }
+}
+function sum_db($id, $type) {
+            $count_db = dbarray(dbquery("SELECT
+				COUNT(rating_item_id) AS count_votes
+				FROM ".DB_RATINGS."
+				WHERE rating_item_id='".$id."' AND rating_type='".$type."'
+             "));
+return $count_db['count_votes'];
+}
+function count_db($id, $type) {
+            $count_db = dbarray(dbquery("SELECT
+				COUNT(comment_item_id) AS count_comment
+				FROM ".DB_COMMENTS."
+				WHERE comment_item_id='".$id."' AND comment_type='".$type."' AND comment_hidden='0'
+             "));
+return $count_db['count_comment'];
 }
 function photo_thumbnail($data) {
     $locale = fusion_get_locale();

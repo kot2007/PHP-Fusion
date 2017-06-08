@@ -230,7 +230,7 @@ class Panels {
         }
 
         $settings = \fusion_get_settings();
-        $locale = \fusion_get_locale('', LOCALE.LOCALESET."global.php");
+        $locale = \fusion_get_locale();
 
         $site['path'] = ltrim(TRUE_PHP_SELF, '/').(FUSION_QUERY ? "?".FUSION_QUERY : "");
         if ($settings['site_seo'] == 1 && defined('IN_PERMALINK') && !isset($_GET['aid'])) {
@@ -410,7 +410,7 @@ class Panels {
                 $file_path = Router::getRouterInstance()->getFilePath().($params ? "?" : '').$params;
                 $script_url = explode("/", $file_path);
             } else {
-                $script_url = explode("/", FUSION_REQUEST);
+				$script_url = explode("/", $_SERVER['PHP_SELF']);
             }
             $url_count = count($script_url);
             $base_url_count = substr_count(BASEDIR, "/") + 1;

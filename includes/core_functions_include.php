@@ -35,18 +35,19 @@ function get_microtime() {
  * Get currency symbol by using a 3-letter ISO 4217 currency code
  * Note that if INTL pecl package is not installed, signs will degrade to ISO4217 code itself
  *
- * @param      $country_iso = 3-letter ISO 4217
+ * @param      $iso         = 3-letter ISO 4217
  * @param bool $description - set to false for just symbol
  *
  * @return null
  */
-function fusion_get_currency($country_iso = NULL, $description = TRUE) {
+function fusion_get_currency($iso = NULL, $description = TRUE) {
+    static $__currency = array();
     if (empty($locale['charset'])) {
+        // Do not use $__currency and $iso in these 2 files
         include LOCALE.LOCALESET."global.php";
         include LOCALE.LOCALESET."currency.php";
     }
-    static $currency_symbol = array();
-    if (empty($currency_symbol)) {
+    if (empty($__currency)) {
         // Euro Exceptions list
         $currency_exceptions = array(
             "ADF" => "EUR",
@@ -77,15 +78,14 @@ function fusion_get_currency($country_iso = NULL, $description = TRUE) {
             "ESB" => "EUR",
         );
         foreach (array_keys($locale['currency']) as $country_iso) {
-            $iso = !empty($currency_exceptions[$country_iso]) ? $currency_exceptions[$country_iso] : $country_iso;
-            $c_symbol = (!empty($locale['currency_symbol'][$iso]) ? html_entity_decode($locale['currency_symbol'][$iso], ENT_QUOTES,
-                $locale['charset']) : $iso);
-            $c_text = $locale['currency'][$iso];
-            $currency_symbol[$country_iso] = $description ? $c_text." ($c_symbol)" : $c_symbol;
+            $c_iso = !empty($currency_exceptions[$country_iso]) ? $currency_exceptions[$country_iso] : $country_iso;
+            $c_symbol = (!empty($locale['currency_symbol'][$c_iso]) ? html_entity_decode($locale['currency_symbol'][$c_iso], ENT_QUOTES, $locale['charset']) : $c_iso);
+            $c_text = $locale['currency'][$c_iso];
+            $__currency[$country_iso] = $description ? $c_text." ($c_symbol)" : $c_symbol;
         }
     }
 
-    return $country_iso === NULL ? $currency_symbol : (isset($currency_symbol[$country_iso]) ? $currency_symbol[$country_iso] : NULL);
+    return $iso === NULL ? $__currency : (isset($currency_symbol[$iso]) ? $currency_symbol[$iso] : NULL);
 }
 
 
@@ -116,7 +116,7 @@ function theme_exists($theme) {
  * @param string    $theme
  */
 function set_theme($theme) {
-    $locale = fusion_get_locale('', LOCALE.LOCALESET."global.php");
+    $locale = fusion_get_locale();
     if (defined("THEME")) {
         return;
     }
@@ -519,7 +519,6 @@ function displaysmileys($textarea, $form = "inputform") {
         $i++;
         $smileys .= "<img src='".get_image("smiley_".$smiley['smiley_text'])."' alt='".$smiley['smiley_text']."' onclick=\"insertText('".$textarea."', '".$smiley['smiley_code']."', '".$form."');\" />\n";
     }
-
     return $smileys;
 }
 
@@ -531,10 +530,9 @@ function displaysmileys($textarea, $form = "inputform") {
  * @return mixed
  */
 function fusion_parse_user($user_name) {
-    $user_regex = ' @[-0-9A-Z_\.]{1,50}';
+    $user_regex = '@[-0-9A-Z_\.]{1,50}';
     $text = preg_replace_callback("#$user_regex#i", function ($user_name) {
         $user_name = preg_replace('/[^A-Za-z0-9\-]/', '', $user_name);
-
         return render_user_tags($user_name);
     }, $user_name);
 
@@ -542,13 +540,13 @@ function fusion_parse_user($user_name) {
 }
 
 /**
- * Cache bbcode mysql
+ * Cache all installed bbcode
  *
  * @return array
  */
 function cache_bbcode() {
-    static $bbcode_cache = NULL;
-    if ($bbcode_cache === NULL) {
+    static $bbcode_cache = array();
+    if (empty($bbcode_cache)) {
         $bbcode_cache = array();
         $result = dbquery("SELECT bbcode_name FROM ".DB_BBCODES." ORDER BY bbcode_order ASC");
         while ($data = dbarray($result)) {
@@ -556,7 +554,7 @@ function cache_bbcode() {
         }
     }
 
-    return $bbcode_cache;
+    return (array)$bbcode_cache;
 }
 
 /**
@@ -594,9 +592,7 @@ function parse_textarea($text, $smileys = TRUE, $bbcode = TRUE, $decode = TRUE, 
     $text = $bbcode == TRUE ? parseubb($text) : $text;
     $text = fusion_parse_user($text);
     $text = $add_line_breaks ? nl2br($text) : $text;
-    if (defined('IN_PERMALINK')) {
-        //$text = strtr($text, [fusion_get_settings('site_path') => '']);
-    }
+
     return (string)$text;
 }
 
@@ -614,26 +610,27 @@ function parseubb($text, $selected = "") {
         $sel_bbcodes = explode("|", $selected);
     }
     foreach ($bbcode_cache as $bbcode) {
+        if (file_exists(LOCALE.LOCALESET."bbcodes/".$bbcode.".php")) {
+            $locale_file = LOCALE.LOCALESET."bbcodes/".$bbcode.".php";
+        } elseif (file_exists(LOCALE."English/bbcodes/".$bbcode.".php")) {
+            $locale_file = LOCALE."English/bbcodes/".$bbcode.".php";
+        }
+        \PHPFusion\Locale::setLocale($locale_file);
+    }
+    $locale = fusion_get_locale();
+
+    foreach ($bbcode_cache as $bbcode) {
         if ($selected && in_array($bbcode, $sel_bbcodes)) {
             if (file_exists(INCLUDES."bbcodes/".$bbcode."_bbcode_include.php")) {
-                if (file_exists(LOCALE.LOCALESET."bbcodes/".$bbcode.".php")) {
-                    include(LOCALE.LOCALESET."bbcodes/".$bbcode.".php");
-                } elseif (file_exists(LOCALE."English/bbcodes/".$bbcode.".php")) {
-                    include(LOCALE."English/bbcodes/".$bbcode.".php");
-                }
                 include(INCLUDES."bbcodes/".$bbcode."_bbcode_include.php");
             }
         } elseif (!$selected) {
             if (file_exists(INCLUDES."bbcodes/".$bbcode."_bbcode_include.php")) {
-                if (file_exists(LOCALE.LOCALESET."bbcodes/".$bbcode.".php")) {
-                    include(LOCALE.LOCALESET."bbcodes/".$bbcode.".php");
-                } elseif (file_exists(LOCALE."English/bbcodes/".$bbcode.".php")) {
-                    include(LOCALE."English/bbcodes/".$bbcode.".php");
-                }
                 include(INCLUDES."bbcodes/".$bbcode."_bbcode_include.php");
             }
         }
     }
+
     $text = descript($text, FALSE);
 
     return $text;
@@ -848,7 +845,7 @@ function censorwords($text) {
  * @return string
  */
 function getuserlevel($userlevel) {
-    $locale = fusion_get_locale('', LOCALE.LOCALESET."global.php");
+    $locale = fusion_get_locale();
     $userlevels = array(
         -101 => $locale['user1'],
         -102 => $locale['user2'],
@@ -868,7 +865,7 @@ function getuserlevel($userlevel) {
  * @return string|NULL NULL if the status does not exist
  */
 function getuserstatus($userstatus) {
-    $locale = fusion_get_locale('', LOCALE.LOCALESET."global.php");
+    $locale = fusion_get_locale();
 
     return ($userstatus >= 0 and $userstatus <= 8) ? $locale['status'.$userstatus] : NULL;
 }
@@ -999,7 +996,7 @@ function cache_groups() {
  *               $levelGroupIcon)
  */
 function getusergroups() {
-    $locale = fusion_get_locale('', LOCALE.LOCALESET."global.php");
+    $locale = fusion_get_locale();
     $groups_array = array(
         array("0", $locale['user0'], $locale['user0'], 'fa fa-user'),
         array("-101", $locale['user1'], $locale['user1'], 'fa fa-user'),
@@ -1419,8 +1416,9 @@ function make_page_breadcrumbs($tree_index, $tree_full, $id_col, $title_col, $ge
  * @global string[] $settings
  * @global string[] $userdata
  *
- * @param string    $format shrtwdate, longdate, forumdate, newsdate or date pattern for the strftime
- * @param int       $val    unix timestamp
+ * @param           $format     shrtwdate, longdate, forumdate, newsdate or date pattern for the strftime
+ * @param           $val        unix timestamp
+ * @param array     $options
  *
  * @return string
  */
@@ -1470,7 +1468,8 @@ function showdate($format, $val, $options = array()) {
  * @return string
  */
 function parsebytesize($size, $digits = 2, $dir = FALSE) {
-    global $locale;
+    $locale = fusion_get_locale();
+
     $kb = 1024;
     $mb = 1024 * $kb;
     $gb = 1024 * $mb;
@@ -1590,8 +1589,13 @@ function fusion_get_settings($key = NULL) {
  *
  * @return array|null
  */
-function fusion_get_locale($key = NULL, $include_file = "") {
-    return PHPFusion\Locale::getLocale($key, $include_file);
+function fusion_get_locale($key = NULL, $include_file = '') {
+    $locale = \PHPFusion\Locale::__getInstance('Default');
+    if ($include_file) {
+        $locale::setLocale($include_file);
+    }
+
+    return $locale->getLocale($key);
 }
 
 /**
@@ -1621,13 +1625,13 @@ function fusion_get_userdata($key = NULL) {
         $userdata = array("user_level" => 0, "user_rights" => "", "user_groups" => "", "user_theme" => 'Default');
     }
     $userdata = $userdata + array(
-        "user_id"     => 0,
-        "user_name"   => fusion_get_locale("user_guest", LOCALE.LOCALESET."global.php"),
-        "user_status" => 1,
-        "user_level"  => 0,
-        "user_rights" => "",
-        "user_groups" => "",
-        "user_theme"  => fusion_get_settings("theme"),
+            "user_id"     => 0,
+            "user_name"   => fusion_get_locale("user_guest"),
+            "user_status" => 1,
+            "user_level"  => 0,
+            "user_rights" => "",
+            "user_groups" => "",
+            "user_theme"  => fusion_get_settings("theme"),
     );
 
     return $key === NULL ? $userdata : (isset($userdata[$key]) ? $userdata[$key] : $userdata);
@@ -1651,7 +1655,7 @@ function fusion_get_user($user_id, $key = NULL) {
         $performance_test = $performance_test + 1;
     }
 
-    return $key === NULL ? $user[$user_id] : (isset($user[$user_id][$key]) ? $user[$user_id][$key] : $user);
+    return $key === NULL ? $user[$user_id] : (isset($user[$user_id][$key]) ? $user[$user_id][$key] : '');
 }
 
 /**
@@ -1797,7 +1801,7 @@ function fusion_get_language_switch() {
  * @param bool|TRUE $icon
  */
 function lang_switcher($icon = TRUE) {
-    $locale = fusion_get_locale('', LOCALE.LOCALESET."global.php");
+    $locale = fusion_get_locale();
     $enabled_languages = fusion_get_enabled_languages();
     if (count($enabled_languages) <= 1) {
         return;

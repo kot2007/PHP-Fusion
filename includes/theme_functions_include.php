@@ -27,55 +27,11 @@ if (!defined("IN_FUSION")) {
  * @return string
  */
 function showrendertime($queries = TRUE) {
-    global $mysql_queries_count;
-    $locale = fusion_get_locale('', LOCALE.LOCALESET."global.php");
-    $db = DatabaseFactory::getConnection();
-    if ($db) {
-        $mysql_queries_count = $db->getGlobalQueryCount();
-    }
+    $locale = fusion_get_locale();
+    $mysql_queries_count = DatabaseFactory::getConnection('default')->getGlobalQueryCount();
     if (fusion_get_settings('rendertime_enabled') == 1 || (fusion_get_settings('rendertime_enabled') == 2 && iADMIN)) {
-        $render_time = substr((microtime(TRUE) - START_TIME), 0, 7);
-        $_SESSION['performance'][] = $render_time;
-        if (count($_SESSION['performance']) > 5) {
-            array_shift($_SESSION['performance']);
-        }
-        $average_speed = $render_time;
-        $diff = 0;
-        if (isset($_SESSION['performance'])) {
-            $average_speed = substr(array_sum($_SESSION['performance']) / count($_SESSION['performance']), 0, 7);
-            $previous_render = array_values(array_slice($_SESSION['performance'], -2, 1, TRUE));
-            $diff = (float)$render_time - (!empty($previous_render) ? (float)$previous_render[0] : 0);
-        }
-
-        $res = sprintf($locale['global_172'], $render_time)." | ".sprintf($locale['global_175'], $average_speed." ($diff)");
+        $res = showBenchmark();
         $res .= ($queries ? " | ".ucfirst($locale['global_173']).": $mysql_queries_count" : '');
-
-        /*
-         * Turn this on if you want to see all the SQL.
-         * This debugging is for core engineers only. No need for translations.
-         */
-        $sql_log = FALSE;
-        if ($sql_log) {
-            $query_log = $db->getQueryLog();
-            $modal = openmodal('querylogsModal', 'SQL Run Time Analysis');
-            $modal_body = '';
-            $i = 0;
-            if (!empty($query_log)) {
-                foreach ($query_log as $connectionID => $sql) {
-                    $modal_body .= "<div class='spacer-xs'>\n";
-                    $modal_body .= "<h5>SQL#$i : ".$sql[0]." seconds</h5>\n\r";
-                    $modal_body .= "[code]".trim($sql[1]).trim($sql[2])."[/code]\n\r";
-                    $modal_body .= "<div>\n";
-                    $modal_body .= "<kbd>".$sql[3][2]['file']."</kbd><span class='badge pull-right'>Line #".$sql[3][2]['line'].", ".$sql[3][2]['function']."</span>\n\r";
-                    $modal_body .= "</div>\n";
-                    $modal_body .= "</div>\n";
-                    $i++;
-                }
-            }
-            $modal .= parse_textarea($modal_body, FALSE, TRUE, FALSE);
-            $modal .= closemodal();
-            add_to_footer($modal);
-        }
 
         return $res;
     } else {
@@ -83,8 +39,59 @@ function showrendertime($queries = TRUE) {
     }
 }
 
+/**
+ * Developer tools only (Translations not Required)
+ *
+ * @param bool $show_sql_performance
+ *
+ * @return bool|string
+ */
+function showBenchmark($show_sql_performance = FALSE) {
+    $locale = fusion_get_locale();
+    if ($show_sql_performance) {
+        $query_log = DatabaseFactory::getConnection('default')->getQueryLog();
+        $modal = openmodal('querylogsModal', "<h4><strong>Database Query Performance Logs</strong></h4>");
+        $modal_body = '';
+        $i = 0;
+        $time = 0;
+        if (!empty($query_log)) {
+            foreach ($query_log as $connectionID => $sql) {
+                $current_time = $sql[0];
+                $modal_body .= "<div class='spacer-xs m-10'>\n";
+                $modal_body .= "<h5><strong>SQL run#$i : ".($sql[0] > .1 ? "<span class='text-danger'>".$sql[0]."</span>" : "<span class='text-success'>".$sql[0]."</span>")." seconds</strong></h5>\n\r";
+                $modal_body .= "[code]".$sql[1].($sql[2] ? " [Parameters -- ".implode(',', $sql[2])." ]" : '')."[/code]\n\r";
+                $modal_body .= "<div>\n";
+                $end_sql = end($sql[3]);
+                $modal_body .= "<kbd>".$end_sql['file']."</kbd><span class='badge pull-right'>Line #".$end_sql['line'].", ".$end_sql['function']."</span>\n\r";
+                $modal_body .= "</div>\n";
+                $modal_body .= "</div>\n";
+                $i++;
+                $time = $current_time + $time;
+            }
+        }
+        $modal .= parse_textarea($modal_body, FALSE, TRUE, FALSE);
+        $modal .= modalfooter("<h4><strong>Total Time Expended in ALL SQL Queries: ".$time." seconds</strong></h4>", FALSE);
+        $modal .= closemodal();
+        add_to_footer($modal);
+    }
+    $render_time = substr((microtime(TRUE) - START_TIME), 0, 7).' seconds';
+    $_SESSION['performance'][] = $render_time;
+    if (count($_SESSION['performance']) > 5) {
+        array_shift($_SESSION['performance']);
+    }
+    $average_speed = $render_time;
+    $diff = 0;
+    if (isset($_SESSION['performance'])) {
+        $average_speed = substr(array_sum($_SESSION['performance']) / count($_SESSION['performance']), 0, 7);
+        $previous_render = array_values(array_slice($_SESSION['performance'], -2, 1, TRUE));
+        $diff = (float)$render_time - (!empty($previous_render) ? (float)$previous_render[0] : 0);
+    }
+
+    return sprintf($locale['global_172'], $render_time)." | ".sprintf($locale['global_175'], $average_speed." ($diff)");
+}
+
 function showMemoryUsage() {
-    $locale = fusion_get_locale('', LOCALE.LOCALESET."global.php");
+    $locale = fusion_get_locale();
     $memory_allocated = parsebytesize(memory_get_peak_usage(TRUE));
     $memory_used = parsebytesize(memory_get_peak_usage(FALSE));
 
@@ -101,7 +108,7 @@ function showcopyright($class = "", $nobreak = FALSE) {
 }
 
 function showcounter() {
-    $locale = fusion_get_locale('', LOCALE.LOCALESET."global.php");
+    $locale = fusion_get_locale();
     $settings = fusion_get_settings();
     if ($settings['visitorcounter_enabled']) {
         return "<!--counter-->".number_format($settings['counter'])." ".($settings['counter'] == 1 ? $locale['global_170'] : $locale['global_171']);
@@ -112,10 +119,9 @@ function showcounter() {
 
 function showprivacypolicy() {
     $html = '';
-
     if (!empty(fusion_get_settings('privacy_policy'))) {
-        $html .= "<a href='".BASEDIR."print.php?type=P' id='privacy_policy'>".fusion_get_locale('global_176', LOCALE.LOCALESET."global.php")."</a>";
-        $modal = openmodal('privacy_policy', $locale = fusion_get_locale('global_176', LOCALE.LOCALESET."global.php"), ['button_id' => 'privacy_policy']);
+        $html .= "<a href='".BASEDIR."print.php?type=P' id='privacy_policy'>".fusion_get_locale('global_176')."</a>";
+        $modal = openmodal('privacy_policy', $locale = fusion_get_locale('global_176'), ['button_id' => 'privacy_policy']);
         $modal .= parse_textarea(fusion_get_settings('privacy_policy'));
         $modal .= closemodal();
         add_to_footer($modal);
@@ -216,7 +222,7 @@ if (!function_exists("openmodal") && !function_exists("closemodal") && !function
      * @return string
      */
     function openmodal($id, $title, $options = array()) {
-    	$locale = fusion_get_locale('', LOCALE.LOCALESET."global.php");
+        $locale = fusion_get_locale();
         $options += array(
             'class' => !empty($options['class']) ?: 'modal-lg',
             'button_id' => "",
@@ -244,7 +250,7 @@ if (!function_exists("openmodal") && !function_exists("closemodal") && !function
         $html .= "<div class='modal-content'>\n";
         if ($title) {
             $html .= "<div class='modal-header'>";
-            $html .= "<button type='button' class='btn pull-right btn-default' data-dismiss='modal'><i class='fa fa-times'></i> ".$locale['close']."</button>\n";
+            $html .= ($options['static'] ? "" : "<button type='button' class='btn pull-right btn-default' data-dismiss='modal'><i class='fa fa-times'></i> ".$locale['close']."</button>\n");
             $html .= "<h4 class='modal-title text-dark' id='$id-title'>$title</h4>\n";
             $html .= "</div>\n";
         }
@@ -505,7 +511,7 @@ if (!function_exists("showsubdate")) {
 
 if (!function_exists("newsposter")) {
     function newsposter($info, $sep = "", $class = "") {
-    	$locale = fusion_get_locale('', LOCALE.LOCALESET."global.php");
+        $locale = fusion_get_locale();
         $res = "";
         $link_class = $class ? " class='$class' " : "";
         $res = THEME_BULLET." <span ".$link_class.">".profile_link($info['user_id'], $info['user_name'], $info['user_status'])."</span> ";
@@ -518,7 +524,7 @@ if (!function_exists("newsposter")) {
 
 if (!function_exists("newsopts")) {
     function newsopts($info, $sep, $class = "") {
-    	$locale = fusion_get_locale('', LOCALE.LOCALESET."global.php");
+        $locale = fusion_get_locale();
         $res = "";
         $link_class = $class ? " class='$class' " : "";
         if (!isset($_GET['readmore']) && $info['news_ext'] == "y") {
@@ -538,7 +544,7 @@ if (!function_exists("newsopts")) {
 
 if (!function_exists("newscat")) {
     function newscat($info, $sep = "", $class = "") {
-    	$locale = fusion_get_locale('', LOCALE.LOCALESET."global.php");
+        $locale = fusion_get_locale();
         $res = "";
         $link_class = $class ? " class='$class' " : "";
         $res .= $locale['global_079'];
@@ -554,7 +560,7 @@ if (!function_exists("newscat")) {
 
 if (!function_exists("articleposter")) {
     function articleposter($info, $sep = "", $class = "") {
-    	$locale = fusion_get_locale('', LOCALE.LOCALESET."global.php");
+        $locale = fusion_get_locale();
         $res = "";
         $link_class = $class ? " class='$class' " : "";
         $res = THEME_BULLET." ".$locale['global_070']."<span ".$link_class.">".profile_link($info['user_id'], $info['user_name'], $info['user_status'])."</span>\n";
@@ -567,7 +573,7 @@ if (!function_exists("articleposter")) {
 
 if (!function_exists("articleopts")) {
     function articleopts($info, $sep) {
-    	$locale = fusion_get_locale('', LOCALE.LOCALESET."global.php");
+        $locale = fusion_get_locale();
         $res = "";
         if ($info['article_allow_comments'] && fusion_get_settings('comments_enabled') == "1") {
             $res = "<a href='articles.php?article_id=".$info['article_id']."#comments'>".$info['article_comments'].($info['article_comments'] == 1 ? $locale['global_073b'] : $locale['global_073'])."</a> ".$sep."\n";
@@ -581,7 +587,7 @@ if (!function_exists("articleopts")) {
 
 if (!function_exists("articlecat")) {
     function articlecat($info, $sep = "", $class = "") {
-    	$locale = fusion_get_locale('', LOCALE.LOCALESET."global.php");
+        $locale = fusion_get_locale();
         $res = "";
         $link_class = $class ? " class='$class' " : "";
         $res .= $locale['global_079'];
@@ -597,7 +603,7 @@ if (!function_exists("articlecat")) {
 
 if (!function_exists("itemoptions")) {
     function itemoptions($item_type, $item_id) {
-    	$locale = fusion_get_locale('', LOCALE.LOCALESET."global.php");
+        $locale = fusion_get_locale();
         $res = "";
         if ($item_type == "N") {
             if (iADMIN && checkrights($item_type)) {
@@ -784,7 +790,7 @@ if (!function_exists("lorem_ipsum")) {
 
 if (!function_exists("timer")) {
     function timer($updated = FALSE) {
-    	$locale = fusion_get_locale('', LOCALE.LOCALESET."global.php");
+        $locale = fusion_get_locale();
         if (!$updated) {
             $updated = time();
         }
@@ -816,7 +822,6 @@ if (!function_exists("timer")) {
                 $answer = round($calc);
                 //	$string = ($answer > 1) ? $timer_b[$arr] : $unit;
                 $string = \PHPFusion\Locale::format_word($answer, $unit, array('add_count' => FALSE));
-
                 return "<abbr class='atooltip' data-toggle='tooltip' data-placement='top' title='".showdate('longdate', $updated)."'>".$answer." ".$string." ".$locale['ago']."</abbr>";
             }
         }
@@ -836,7 +841,7 @@ if (!function_exists("days_current_month")) {
 
 if (!function_exists("countdown")) {
     function countdown($time) {
-    	$locale = fusion_get_locale('', LOCALE.LOCALESET."global.php");
+        $locale = fusion_get_locale();
         $updated = stripinput($time);
         $second = 1;
         $minute = $second * 60;
@@ -870,7 +875,7 @@ if (!function_exists("countdown")) {
             }
         }
         if (!isset($answer)) {
-            return "<abbr class='atooltip' data-toggle='tooltip' data-placement='top' title='".showdate('newsdate', time())."'>now</abbr>";
+            return "<abbr class='atooltip' data-toggle='tooltip' data-placement='top' title='".showdate('newsdate', time())."'>".$locale['now']."</abbr>";
         }
     }
 }
@@ -1052,7 +1057,7 @@ if (!function_exists("tab_active")
         }
 
         public function closetab(array $options = array()) {
-            $locale = fusion_get_locale('', LOCALE.LOCALESET."global.php");
+            $locale = fusion_get_locale();
             $default_options = array(
                 "tab_nav" => FALSE,
             );
@@ -1160,7 +1165,7 @@ if (!function_exists("tab_active")
 if (!function_exists("display_ratings")) {
     /* Standard ratings display */
     function display_ratings($total_sum, $total_votes, $link = FALSE, $class = FALSE, $mode = '1') {
-    	$locale = fusion_get_locale('', LOCALE.LOCALESET."global.php");
+        $locale = fusion_get_locale();
         $start_link = $link ? "<a class='comments-item ".$class."' href='".$link."'>" : '';
         $end_link = $link ? "</a>\n" : '';
         $average = $total_votes > 0 ? number_format($total_sum / $total_votes, 2) : 0;
@@ -1178,7 +1183,7 @@ if (!function_exists("display_ratings")) {
 if (!function_exists("display_comments")) {
     /* Standard comment display */
     function display_comments($news_comments, $link = FALSE, $class = FALSE, $mode = '1') {
-    	$locale = fusion_get_locale('', LOCALE.LOCALESET."global.php");
+        $locale = fusion_get_locale();
         $start_link = $link ? "<a class='comments-item ".$class."' href='".$link."' {%title%} >" : '';
         $end_link = $link ? "</a>\n" : '';
         $str = $mode == 1 ? format_word($news_comments, $locale['fmt_comment']) : $news_comments;

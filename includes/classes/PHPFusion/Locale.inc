@@ -15,68 +15,99 @@
 | copyright header is strictly prohibited without
 | written permission from the original author(s).
 +--------------------------------------------------------*/
-namespace PHPFusion;
 
+namespace PHPFusion;
+/**
+ * Class Locale
+ *
+ * Locale Handling
+ * We set a new global.php when the class initialize automatically so this will only be loaded once
+ * Implemented at core_functions_include.php
+ *
+ * @package PHPFusion
+ */
 class Locale {
 
-    /*
-     * Cache to omit inclusion if there is a repeated request
-     */
-    //private static $locale_cache = array();
+    private static $locale_file = [];
+    private static $locale = [];
+    private static $instance = NULL;
 
     /**
-     * Get Locale
+     * Ensure that the class is only used once
      *
-     * Fetch a given locale key
+     * @param $key
      *
-     * @param null   $key - The key of one setting
-     * @param string $include_file - The full path of the file which to be included
-     * @return array|null
+     * @return mixed
      */
-    public static function getLocale($key = NULL, $include_file = "") {
-        global $locale;
-        $is_sanitized = TRUE;
-        if ($include_file) {
+    public static function __getInstance($key) {
+        if (self::$instance[$key] === NULL) {
+            self::$instance[$key] = new Static();
+        }
+
+        return self::$instance[$key];
+    }
+
+    /**
+     * Includes a locale file and logs a trace
+     *
+     * @param $filename
+     */
+    public static function load_locale_file($filename) {
+        $locale = array();
+        self::$locale_file[$filename] = debug_backtrace();
+        include_once $filename;
+        self::$locale += $locale;
+    }
+
+    public static function get_loaded_files() {
+        return self::$locale_file;
+    }
+
+    /**
+     * Iinclude a new locale file
+     *
+     * @param $include_file     Can be an array or a string
+     */
+    public static function setLocale($include_file) {
+        if (!empty($include_file)) {
             if (is_array($include_file)) {
                 foreach ($include_file as $file) {
-                    if (is_file($file)) {
-                        //self::$locale_cache[] = $file;
-                        include $file;
+                    if (!isset(self::$locale_file[$file])) {
+                        self::load_locale_file($file);
                     }
                 }
-            } else {
-                if (is_file($include_file)) {
-                    //self::$locale_cache[] = $include_file;
-                    include $include_file;
-                }
+            } elseif (!isset(self::$locale_file[$include_file])) {
+                self::load_locale_file($include_file);
             }
         }
+    }
 
-        if (!empty($locale) && $is_sanitized == TRUE) {
-            return empty($key) ? $locale : (isset($locale[$key]) ? $locale[$key] : array());
-        }
-
-        return NULL;
+    public function getLocale($key = NULL) {
+        //self::$use_count++;
+        //print_p(microtime(TRUE)-START_TIME);
+        //print_p(self::$use_count);
+        return empty($key) ? self::$locale : (isset(self::$locale[$key]) ? self::$locale[$key] : '');
     }
 
     /**
      * @param       $count - integer
      * @param       $words - 'member|members';
      * @param array $options
-     *              Indexes:
-     *                  -   add_count ...... true/false (default true) to show integer
-     *                  -   show_html ...... whether to output html as return
-     *                  -   html_template ..... custom html template
-     *                  -   language at use.
+     *                     Indexes:
+     *                     -   add_count ...... true/false (default true) to show integer
+     *                     -   html ...... whether to output html as return
+     *                     -   html_template ..... custom html template
+     *                     -   language at use.
+     *
      * @return string
      */
     public static function format_word($count, $words, $options = array()) {
 
         $default_options = array(
-            'add_count' => TRUE,
-            'html' => FALSE,
+            'add_count'     => TRUE,
+            'html'          => FALSE,
             'html_template' => "<span class='fusion_count'>{%count%}</span> <span class='fusion_word'>{%result%}</span>",
-            'language' => LANGUAGE,
+            'language'      => LANGUAGE,
         );
 
         $options += $default_options;
@@ -88,35 +119,20 @@ class Locale {
         // Format the result
         switch ($options['language']) {
             case 'English':
-                $form = $count == 1 ? 0 : 1;
-                $words_array = explode("|", $words);
-                $result = $words_array[$form];
-                break;
             case 'Danish':
+            case 'German':
+            case 'Romanian':
                 $form = $count == 1 ? 0 : 1;
                 $words_array = explode("|", $words);
                 $result = $words_array[$form];
                 break;
+            case 'Czech':
+            case 'Slovak':
             case 'Russian':
-                $fcount = $count % 100;
-                $a = $fcount % 10;
-                $b = floor($fcount / 10);
-                $form = 2;
-                if ($b != 1) {
-                    if ($a == 1) {
-                        $form = 0;
-                    } elseif ($a >= 2 && $a <= 4) {
-                        $form = 1;
-                    }
-                }
-                $words_array = explode("|", $words);
-                $result = $words_array[$form];
-                break;
             case 'Ukranian':
                 $fcount = $count % 100;
                 $a = $fcount % 10;
                 $b = floor($fcount / 10);
-
                 $form = 2;
 
                 if ($b != 1) {
@@ -126,10 +142,11 @@ class Locale {
                         $form = 1;
                     }
                 }
+
                 $words_array = explode("|", $words);
                 $result = $words_array[$form];
                 break;
-            default : // never plural language - i.e. chinese is here
+            default: // never plural language - i.e. chinese is here
                 $words_array = explode("|", $words);
                 $result = $words_array[0];
         }
@@ -137,10 +154,10 @@ class Locale {
         if ($options['add_count']) {
             if ($options['html'] && !empty($options['html_template'])) {
                 return strtr($options['html_template'],
-                             array(
-                                 "{%count%}" => $count,
-                                 "{%result%}" => $result
-                             )
+                    array(
+                        "{%count%}"  => $count,
+                        "{%result%}" => $result
+                    )
                 );
             } else {
                 return $count.' '.$result;
@@ -152,7 +169,9 @@ class Locale {
 
     /**
      * Given English as base, find out the localized version
+     *
      * @param $country
+     *
      * @return mixed
      */
     public static function translate_country_names($country) {
@@ -161,18 +180,19 @@ class Locale {
             "Czech Republic"  => "Česko",
             "Denmark"         => "Danmark",
             "Finland"         => "Suomi",
-            "Hungary"         => "Magyarország",
+            "Germany"         => "Deutschland",
             "Hong Kong"       => "香港",
-            "The Netherlands" => "Nederland",
+            "Hungary"         => "Magyarország",
+            "Italy"           => "Italia",
             "Norway"          => "Norge",
             "Poland"          => "Polska",
-            "Italy"           => "Italia",
-            "Germany"         => "Deutschland",
+            "Romania"         => "Rom&#226;nia",
             "Russia"          => "Россия",
-            "Taiwan"          => "台湾",
-            "Ukraine"         => "Україна",
-            "Sweden"          => "Sverige",
             "Slovakia"        => "Slovensko",
+            "Sweden"          => "Sverige",
+            "Taiwan"          => "台湾",
+            "The Netherlands" => "Nederland",
+            "Ukraine"         => "Україна",
         );
 
         if (!empty($translated_countries[$country])) {
@@ -194,26 +214,28 @@ class Locale {
      */
     public static function translate_lang_names($key = NULL) {
         $translated_langs = array(
+            "Chinese_Simplified"  => "中文-简体",
             "Chinese_Traditional" => "中文-繁体",
-            "Chinese_Simplified" => "中文-简体",
-            "Czech" => "Čeština",
-            "Danish" => "Dansk",
-            "Dutch" => "Nederlands",
-            "English" => "English",
-            "French" => "Francais",
-            "German" => "Deutsch",
-            "Hungarian" => "Magyar",
-            "Italian" => "Italiano",
-            "Lithuanian" => "Lietuvių",
-            "Malay" => "Melayu",
-            "Persian" => "Persian",
-            "Polish" => "Polski",
-            "Russian" => "Русский",
-            "Spanish" => "Español",
-            "Swedish" => "Svenska",
-            "Turkish" => "Türkçe",
-            "Ukrainian" => "Українська",
-            "Norwegian" => "Norsk"
+            "Czech"               => "Čeština",
+            "Danish"              => "Dansk",
+            "Dutch"               => "Nederlands",
+            "English"             => "English",
+            "French"              => "Francais",
+            "German"              => "Deutsch",
+            "Hungarian"           => "Magyar",
+            "Italian"             => "Italiano",
+            "Lithuanian"          => "Lietuvių",
+            "Malay"               => "Melayu",
+            "Norwegian"           => "Norsk",
+            "Persian"             => "Persian",
+            "Polish"              => "Polski",
+            "Romanian"            => "Rom&#226;n&#259;",
+            "Russian"             => "Русский",
+            "Slovak"              => "Slovenčina",
+            "Spanish"             => "Español",
+            "Swedish"             => "Svenska",
+            "Turkish"             => "Türkçe",
+            "Ukrainian"           => "Українська",
         );
 
         return $key === NULL ? $translated_langs : (isset($translated_langs[$key]) ? $translated_langs[$key] : $key);
@@ -372,6 +394,7 @@ class Locale {
             'zh' => 'Chinese',
             'zu' => 'Zulu',
         );
+
         $iso_codes = array_flip($language_codes);
         if ($iso_to_lang) {
             return $key === NULL ? $language_codes : (isset($language_codes[$key]) ? self::translate_lang_names($language_codes[$key]) : NULL);

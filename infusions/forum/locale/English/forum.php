@@ -3,6 +3,7 @@ $locale['error-DP001'] = "No posts to be removed.";
 $locale['error-MP000'] = "Move posts - error";
 $locale['error-MP001'] = "New thread doesn&#039;t exist.";
 $locale['error-MP002'] = "Posts which you&#039;re marked to move do not exists or someone else already moved them.";
+
 $locale['forum_0000'] = "Discussion Forum";
 $locale['forum_0001'] = "Forum";
 $locale['forum_0002'] = "Threads";
@@ -18,6 +19,18 @@ $locale['forum_0011'] = "My Posts";
 $locale['forum_0012'] = "Latest Threads";
 $locale['forum_0013'] = "Forum Categories";
 $locale['forum_0014'] = "Reputation";
+$locale['forum_0015'] = "Forum Overview";
+$locale['forum_0016'] = "Activity";
+$locale['forum_0017'] = "People";
+$locale['forum_0018'] = "Person";
+
+$locale['forum_0020'] = "Last Activity";
+$locale['forum_0021'] = "on %s by %s";
+$locale['forum_0022'] = "Responded in";
+$locale['forum_0023'] = "Re:";
+$locale['forum_0024'] = "See the full discussion posts";
+
+
 $locale['forum_0050'] = "View Forum";
 $locale['forum_0051'] = "Subject";
 $locale['forum_0052'] = "Author";
@@ -25,7 +38,9 @@ $locale['forum_0053'] = "Views";
 $locale['forum_0054'] = "Replies";
 $locale['forum_0055'] = "Page:";
 $locale['forum_0056'] = "No Threads have been started";
-$locale['forum_0057'] = "Start a New Thread";
+$locale['forum_0057'] = "Start New Thread";
+$locale['forum_0058'] = "Ask a Question";
+
 $locale['forum_0080'] = "Check All";
 $locale['forum_0081'] = "Uncheck All";
 $locale['forum_0082'] = "Delete threads";
@@ -95,7 +110,7 @@ $locale['forum_0223'] = "Attachments";
 $locale['forum_0224'] = "Polls";
 $locale['forum_0225'] = "Sort by";
 $locale['forum_0226'] = "Date - last update";
-$locale['forum_0228'] = "Title";
+$locale['forum_0228'] = "Topic Title";
 $locale['forum_0229'] = "Order";
 $locale['forum_0230'] = "Descending";
 $locale['forum_0231'] = "Ascending";
@@ -106,7 +121,7 @@ $locale['forum_0260'] = "New Posts";
 $locale['forum_0261'] = "No New Posts";
 $locale['forum_0262'] = "Sticky Thread";
 $locale['forum_0263'] = "Locked Thread";
-$locale['forum_0264'] = "Start New Thread";
+
 $locale['forum_0265'] = "Edit";
 $locale['forum_0266'] = "Quote";
 $locale['forum_0267'] = "wrote";
@@ -145,7 +160,7 @@ $locale['forum_0365'] = "Responses";
 $locale['forum_0366'] = "Add Poll";
 $locale['forum_0372'] = "Ratings";
 $locale['forum_0373'] = "Last replied by:";
-$locale['forum_0374'] = "Any Topics";
+$locale['forum_0374'] = "All Content";
 $locale['forum_0378'] = "Solved";
 $locale['forum_0379'] = "Unsolved";
 $locale['forum_0381'] = "Post Time";
@@ -157,7 +172,9 @@ $locale['forum_0396'] = "Confirm Forum Selection";
 $locale['forum_0397'] = "There are no forum defined.";
 $locale['forum_0398'] = "Unable to download file";
 $locale['forum_0399'] = "Add Bounty";
+
 $locale['forum_0400'] = "Thread bounty has been updated. Please be sure to select the answer to be awarded with the bounty";
+
 $locale['forum_0500'] = "Preview Thread";
 $locale['forum_0501'] = "Post Thread";
 $locale['forum_0505'] = "Preview Changes";
@@ -224,6 +241,9 @@ $locale['forum_0591'] = "Flush Post";
 $locale['forum_0592'] = "Flush Threads";
 $locale['forum_0593'] = "Flush Attachments";
 $locale['forum_0595'] = "Flush Poll";
+$locale['forum_0596'] = "Question";
+$locale['forum_0597'] = "Question|Questions";
+
 $locale['forum_0601'] = "Message";
 $locale['forum_0602'] = "Options";
 $locale['forum_0603'] = "Edit Poll";

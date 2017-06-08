@@ -188,7 +188,11 @@ function get_table_rows($table_name, $localeset = 'English') {
                 'settings_value' => $locale['setup_3701'],
             ],
             [
-                'settings_name' => 'forumdate',
+                'settings_name'  => 'link_bbcode',
+                'settings_value' => '0',
+            ],
+            [
+                'settings_name'  => 'forumdate',
                 'settings_value' => $locale['setup_3702'],
             ],
             [
@@ -490,7 +494,10 @@ function get_table_rows($table_name, $localeset = 'English') {
             [
                 'settings_name' => 'enabled_languages',
                 'settings_value' => $_GET['localeset']
-                //(empty($_POST['enabled_languages']) ? stripinput($_POST['localeset']) : stripinput($_POST['enabled_languages']) ),
+            ],
+            [
+                'settings_name'  => 'UserName_ban',
+                'settings_value' => ''
             ]
         ]
     ];
@@ -1261,7 +1268,6 @@ function get_table_rows($table_name, $localeset = 'English') {
 
     return isset($table_settings[$table_name]) ? $table_settings[$table_name] : NULL;
 }
-
 
 // Get Current URL
 function getCurrentURL() {

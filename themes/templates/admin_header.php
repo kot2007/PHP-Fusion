@@ -20,14 +20,17 @@ if (!defined("IN_FUSION")) {
 }
 
 define("ADMIN_PANEL", TRUE);
-if (fusion_get_settings("maintenance") == "1" && ((iMEMBER && fusion_get_settings("maintenance_level") == USER_LEVEL_MEMBER && $userdata['user_id'] != "1") || (fusion_get_settings("maintenance_level") < $userdata['user_level']))) {
+$settings = fusion_get_settings();
+$locale = fusion_get_locale();
+
+if ($settings['maintenance'] == "1" && ((iMEMBER && $settings['maintenance_level'] == USER_LEVEL_MEMBER && $userdata['user_id'] != "1") || ($settings['maintenance_level'] < $userdata['user_level']))) {
     redirect(BASEDIR."maintenance.php");
 }
 
 require_once INCLUDES."breadcrumbs.php";
 require_once INCLUDES."header_includes.php";
 require_once THEMES."templates/render_functions.php";
-$settings = fusion_get_settings();
+
 if (preg_match("/^([a-z0-9_-]){2,50}$/i",
                $settings['admin_theme']) && file_exists(THEMES."admin_themes/".$settings['admin_theme']."/acp_theme.php")
 ) {
@@ -37,12 +40,19 @@ if (preg_match("/^([a-z0-9_-]){2,50}$/i",
 }
 
 if (iMEMBER) {
-    $result = dbquery("UPDATE ".DB_USERS." SET user_lastvisit=UNIX_TIMESTAMP(NOW()), user_ip='".USER_IP."', user_ip_type='".USER_IP_TYPE."' WHERE user_id='".$userdata['user_id']."'");
+    $result = dbquery("UPDATE ".DB_USERS." SET user_lastvisit=:time, user_ip=:ip, user_ip_type=:ip_type WHERE user_id=:user_id",
+        [
+            ':time'    => TIME,
+            ':ip'      => USER_IP,
+            ':ip_type' => USER_IP_TYPE,
+            ':user_id' => fusion_get_userdata('user_id')
+        ]
+    );
 }
 
 $bootstrap_theme_css_src = '';
 // Load bootstrap
-if ($settings['bootstrap']) {
+if ($settings['bootstrap'] || defined('BOOTSTRAP')) {
     define('BOOTSTRAPPED', TRUE);
     $bootstrap_theme_css_src = INCLUDES."bootstrap/bootstrap.min.css";
     add_to_footer("<script type='text/javascript' src='".INCLUDES."bootstrap/bootstrap.min.js'></script>");
@@ -60,13 +70,11 @@ ob_start();
 // After relogin the user can simply click back in browser and their input will
 // still be there so nothing is lost
 if (!check_admin_pass('')) {
-
     // If not admin, also must check if user_id is exist due to session time out.
     $user_id = fusion_get_userdata("user_id");
     if (empty($user_id)) {
         redirect(BASEDIR."index.php");
     }
-
     require_once "footer.php";
     exit;
 }

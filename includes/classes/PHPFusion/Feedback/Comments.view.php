@@ -73,7 +73,18 @@ if (!function_exists('display_comments_listing')) {
         <?php
     }
 }
-
+/**
+ * No comments text container
+ */
+if (!function_exists('display_no_comments')) {
+    function display_no_comments() {
+        ?>
+        <li>
+            {%comments_undefined_text%}
+        </li>
+        <?php
+    }
+}
 /**
  * Single Comment List {%comments_lists%}
  */
@@ -92,7 +103,11 @@ if (!function_exists('display_comments_list')) {
                     <div class='comment_title'><!--comment_subject-->{%comment_subject%}<!--//comment_subject--></div><?php endif; ?>
                 <div class='comment_message'><!--comment_message-->{%comment_message%}<!--//comment_message--></div>
                 <div>
-                    <small>{%comment_reply_link%} &middot; {%comment_edit_link%} &middot; {%comment_delete_link%} - <span class='comment_date'>{%comment_date%}</span></small>
+                    <small><?php
+                     echo !empty($info['reply_link']) ? '{%comment_reply_link%}' : '';
+                     echo !empty($info['edit_link']) ? ' &middot; {%comment_edit_link%}' : '';
+                     echo !empty($info['delete_link']) ? ' &middot; {%comment_delete_link%}' : ''; ?>
+                     - <span class='comment_date'>{%comment_date%}</span></small>
                 </div>
                 {%comment_reply_form%}
                 <ul class='sub_comments'>

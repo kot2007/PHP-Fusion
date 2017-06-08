@@ -321,7 +321,7 @@ if (db_exists(DB_PREFIX.'users')) {
     if (dbrows($result) > 0) {
         while ($data = dbarray($result)) {
             if ($data['user_level']) { // will omit 0
-                $result = dbquery("UPDATE ".DB_USERS." SET user_level='-".$data['user_level']."' WHERE user_id='".$data['user_id']."'");
+                dbquery("UPDATE ".DB_USERS." SET user_level='-".$data['user_level']."' WHERE user_id='".$data['user_id']."'");
             }
         }
     }
@@ -433,6 +433,7 @@ if (db_exists(DB_SETTINGS)) {
         'logoposition_sm'   => 'logo-sm-left',
         'logoposition_md'   => 'logo-md-left',
         'logoposition_lg'   => 'logo-lg-left',
+        'UserName_ban'       => '',
     ];
     foreach ($insert_settings_tbl as $key => $value) {
         if (!isset($settings[$key])) {

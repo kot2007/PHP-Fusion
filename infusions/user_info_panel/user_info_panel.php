@@ -20,21 +20,7 @@ require_once dirname(__FILE__).'/templates/default.php';
 $userdata = fusion_get_userdata();
 $aidlink = fusion_get_aidlink();
 $locale = fusion_get_locale();
-$modules = array(
-    'n' => array($locale['UM090'], DB_PREFIX.'news'),
-    'b' => array($locale['UM095'], DB_PREFIX.'blog'),
-    'l' => array($locale['UM091'], DB_PREFIX.'weblinks'),
-    'a' => array($locale['UM092'], DB_PREFIX.'articles'),
-    'p' => array($locale['UM093'], DB_PREFIX.'photos'),
-    'd' => array($locale['UM094'], DB_PREFIX.'downloads'),
-    'q' => array($locale['UM102'], DB_PREFIX.'faqs')
-);
-$installedModules = array();
-foreach ($modules as $k => $v) {
-    if (db_exists($v[1])) {
-        $installedModules[$k] = $v[0];
-    }
-}
+$modules = \PHPFusion\Admins::getInstance()->getSubmitData();
 
 if (iMEMBER) {
     $messages_count = dbquery("SELECT
@@ -50,7 +36,7 @@ if (iMEMBER) {
     $outbox_count = (int)$messages_count['outbox_count'];
     $archive_count = (int)$messages_count['archive_count'];
     $msg_count = (int)$messages_count['unread_count'];
-    $forum_exists = db_exists(DB_PREFIX.'forums') ? TRUE : FALSE;
+    $forum_exists = infusion_exists('forum');
 
     $pm_progress = '';
     if (!iSUPERADMIN) {
@@ -87,11 +73,11 @@ if (iMEMBER) {
 
     $submissions_link_arr = [];
     $submissions_link = '';
-    if (!empty($installedModules)) {
-        foreach ($installedModules as $stype => $title) {
+    if (!empty($modules)) {
+        foreach ($modules as $stype => $title) {
             $submissions_link_arr[] = [
-                'link'  => BASEDIR.'submit.php?stype='.$stype,
-                'title' => $title,
+                'link'  => $title['submit_link'],
+                'title' => sprintf($title['title'], str_replace('...', '', fusion_get_locale('UM089', LOCALE.LOCALESET."global.php"))),
             ];
         }
     }

@@ -26,39 +26,45 @@ function display_bbcodes($width, $textarea_name = "message", $inputform_name = "
     }
     $__BBCODE__ = array();
     $bbcodes = "";
+
+    foreach ($bbcode_cache as $bbcode) {
+        if (file_exists(LOCALE.LOCALESET."bbcodes/".$bbcode.".php")) {
+            $locale_file = LOCALE.LOCALESET."bbcodes/".$bbcode.".php";
+            \PHPFusion\Locale::setLocale($locale_file);
+        } elseif (file_exists(LOCALE."English/bbcodes/".$bbcode.".php")) {
+            $locale_file = LOCALE."English/bbcodes/".$bbcode.".php";
+            \PHPFusion\Locale::setLocale($locale_file);
+        }
+    }
+    $locale = fusion_get_locale();
     foreach ($bbcode_cache as $bbcode) {
         if ($selected && in_array($bbcode, $sel_bbcodes)) {
-            if (file_exists(LOCALE.LOCALESET."bbcodes/".$bbcode.".php")) {
-                include(LOCALE.LOCALESET."bbcodes/".$bbcode.".php");
-            } elseif (file_exists(LOCALE."English/bbcodes/".$bbcode.".php")) {
-                include(LOCALE."English/bbcodes/".$bbcode.".php");
-            }
             include(INCLUDES."bbcodes/".$bbcode."_bbcode_include_var.php");
         } elseif (!$selected) {
-            if (file_exists(LOCALE.LOCALESET."bbcodes/".$bbcode.".php")) {
-                include(LOCALE.LOCALESET."bbcodes/".$bbcode.".php");
-            } elseif (file_exists(LOCALE."English/bbcodes/".$bbcode.".php")) {
-                include(LOCALE."English/bbcodes/".$bbcode.".php");
-            }
             include(INCLUDES."bbcodes/".$bbcode."_bbcode_include_var.php");
         }
     }
 
     $check_path = $_SERVER['DOCUMENT_ROOT'].fusion_get_settings('site_path').'includes/bbcodes/images/';
-    $img_path = FUSION_ROOT.fusion_get_settings('site_path').'includes/bbcodes/images/';
+    $img_path = fusion_get_settings('siteurl').'includes/bbcodes/images/';
 
     foreach ($__BBCODE__ as $bbdata) {
-        if (file_exists($check_path.$bbdata['value'].".png")) {
-            $type = "type='image' src='".$img_path.$bbdata['value'].".png'";
-        } else if (file_exists($check_path.$bbdata['value'].".gif")) {
-            $type = "type='image' src='".$img_path.$bbdata['value'].".gif'";
-        } else if (file_exists($check_path.$bbdata['value'].".jpg")) {
-            $type = "type='image' src='".$img_path.$bbdata['value'].".jpg'";
-        } else if (file_exists($check_path.$bbdata['value'].".svg")) {
+    switch ($check_path.$bbdata['value']) {
+        case file_exists($check_path.$bbdata['value'].".svg"):
             $type = "type='image' style='width: 24px; height: 24px;' src='".$img_path.$bbdata['value'].".svg'";
-        } else {
+            break;
+        case file_exists($check_path.$bbdata['value'].".png"):
+            $type = "type='image' src='".$img_path.$bbdata['value'].".png'";
+            break;
+        case file_exists($check_path.$bbdata['value'].".gif"):
+            $type = "type='image' src='".$img_path.$bbdata['value'].".gif'";
+            break;
+        case file_exists($check_path.$bbdata['value'].".jpg"):
+            $type = "type='image' src='".$img_path.$bbdata['value'].".jpg'";
+            break;
+        default:
             $type = "type='button' value='".$bbdata['value']."'";
-        }
+    }
 
         if (array_key_exists('onclick', $bbdata) && $bbdata['onclick'] != "") {
             $onclick = $bbdata['onclick'];
@@ -115,6 +121,8 @@ function display_bbcodes($width, $textarea_name = "message", $inputform_name = "
 }
 
 function strip_bbcodes($text) {
+    return $text;
+
     global $p_data;
     if (iADMIN) {
         return $text;
@@ -124,9 +132,8 @@ function strip_bbcodes($text) {
     $bbcode_cache = cache_bbcode();
 
     foreach ($bbcode_cache as $bbcode) {
-        if (file_exists(LOCALE.LOCALESET."bbcodes/".$bbcode.".php")) {
-            include(LOCALE.LOCALESET."bbcodes/".$bbcode.".php");
-        }
+        $locale = fusion_get_locale('', LOCALE.LOCALESET.'bbcodes/'.$bbcode.'.php');
+
         include(INCLUDES."bbcodes/".$bbcode."_bbcode_include_var.php");
     }
     if (!empty($__BBCODE_NOT_QUOTABLE__) and is_array($__BBCODE_NOT_QUOTABLE__)) {

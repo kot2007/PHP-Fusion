@@ -149,7 +149,7 @@ class UserFields extends QuantumFields {
             $user_email = isset($_POST['user_email']) ? $_POST['user_email'] : $this->userData['user_email'];
             $user_hide_email = isset($_POST['user_hide_email']) ? $_POST['user_hide_email'] : $this->userData['user_hide_email'];
             $this->info['user_name'] = form_para($locale['u129'], 'account', 'profile_category_name');
-            if (db_exists(DB_PREFIX.'forums')) {
+            if (infusion_exists('forum')) {
                 $user_reputation = isset($_POST['user_reputation']) ? $_POST['user_reputation'] : $this->userData['user_reputation'];
             }
 
@@ -215,10 +215,13 @@ class UserFields extends QuantumFields {
                 $this->info['user_password'] .= form_hidden('user_hash', '', $this->userData['user_password']);
             }
             $this->info['user_password'] .= "<div class='col-xs-12 col-sm-9 col-sm-offset-3 col-md-offset-3 col-lg-offset-3'><span class='text-smaller'>".$locale['u147']."</span></div><br/>";
+
             // Admin Password - not available for everyone except edit profile.
             if (!$this->registration && iADMIN && !defined('ADMIN_PANEL')) {
+                $this->info['user_admin_password'] = form_para($locale['u131'], 'adm_password', 'profile_category_name');
                 if ($this->userData['user_admin_password']) {
-                    $this->info['user_admin_password'] = form_text('user_admin_password', $locale['u144a'], '', array(
+                    // This is for changing password
+                    $this->info['user_admin_password'] .= form_text('user_admin_password', $locale['u144a'], '', array(
                             'type'             => 'password',
                             'autocomplete_off' => 1,
                             'inline'           => TRUE,
@@ -235,7 +238,8 @@ class UserFields extends QuantumFields {
                         )
                     );
                 } else {
-                    $this->info['user_admin_password'] = form_text('user_admin_password', $locale['u144'], '', array(
+                    // This is just setting new password off blank records
+                    $this->info['user_admin_password'] .= form_text('user_admin_password', $locale['u144'], '', array(
                             'type'             => 'password',
                             'autocomplete_off' => 1,
                             'inline'           => TRUE,
@@ -244,6 +248,7 @@ class UserFields extends QuantumFields {
                         )
                     );
                 }
+
                 $this->info['user_admin_password'] .= form_text('user_admin_password2', $locale['u145'], '', array(
                         'class'            => 'm-b-0',
                         'type'             => 'password',
@@ -323,7 +328,7 @@ class UserFields extends QuantumFields {
                 )
             );
 
-            if (iSUPERADMIN && db_exists(DB_PREFIX.'forums')) {
+            if (iSUPERADMIN && infusion_exists('forum')) {
                 $this->info['user_reputation'] = form_text('user_reputation', $locale['u210'], $user_reputation, array(
                         'type'   => 'number',
                         'inline' => TRUE
@@ -654,7 +659,7 @@ class UserFields extends QuantumFields {
         if (iADMIN || $this->userData['user_hide_email'] == 0) {
             $this->info['core_field']['profile_user_email'] = array(
                 'title' => $locale['u064'],
-                'value' => hide_email($this->userData['user_email'], fusion_get_locale("UM061a", LOCALE.LOCALESET."global.php"))
+                'value' => hide_email($this->userData['user_email'], fusion_get_locale("UM061a"))
             );
         }
 
@@ -700,6 +705,7 @@ class UserFields extends QuantumFields {
         $user_groups = array_filter($user_groups);
         if (!empty($user_groups)) {
             for ($i = 0; $i < count($user_groups); $i++) {
+                $grp_html .= $i > 0 ? ', ' : '';
                 $grp_html .= "<span class='user_group'><a href='".BASEDIR."profile.php?group_id=".$user_groups[$i]."'>".getgroupname($user_groups[$i])."</a></span>";
             }
             $this->info['core_field']['profile_user_group']['value'] = $grp_html;

@@ -45,7 +45,7 @@ class Install_Core extends Infusion_Core {
     const STEP_SETUP_COMPLETE = 7;
     const STEP_EXIT = 8;
     const STEP_TRANSFER = 9;
-    const BUILD_VERSION = '9.0';
+    const BUILD_VERSION = '9.03';
     const INSTALLER_ALGO = 'sha256';
     const USER_RIGHTS_SA = 'A.AD.APWR.B.BB.BLOG.C.CP.DB.ERRO.FQ.F.FR.IM.I.IP.M.MI.MAIL.P.PH.PI.PL.PO.ROB.SL.S1.S2.S3.S4.S5.S6.S7.S8.S9.S10.S11.S12.S13.SB.SM.SU.UF.UFC.UG.UL.U.TS.W.LANG';
     protected static $locale = [];
@@ -124,6 +124,9 @@ class Install_Core extends Infusion_Core {
 
             define('IN_SETUP', TRUE);
 
+            require_once BASEDIR.'includes/dynamics.inc';
+            require_once BASEDIR.'includes/autoloader.php';
+
             self::installer_step();
 
             self::verify_requirements();
@@ -144,7 +147,7 @@ class Install_Core extends Infusion_Core {
 
             define("LOCALESET", LANGUAGE."/");
 
-            self::$locale = Locale::getLocale('', LOCALE.LOCALESET."setup.php");
+            self::$locale = fusion_get_locale('', [LOCALE.LOCALESET."global.php", LOCALE.LOCALESET."setup.php"]);
 
             // ALWAYS reset config to config_temp.php
             if (file_exists(BASEDIR.'config.php')) {
@@ -157,7 +160,7 @@ class Install_Core extends Infusion_Core {
             self::detect_upgrade();
 
             // Run dynamics API
-            new \dynamics();
+            \Dynamics::getInstance();
             // set timezone for PDO
             date_default_timezone_set('Europe/London');
 

@@ -22,7 +22,6 @@ use PHPFusion\Authenticate;
 
 // Uncomment to see server errors without modifying php.ini
 ini_set('display_errors', '1');
-
 if (preg_match("/maincore.php/i", $_SERVER['PHP_SELF'])) {
     die();
 }
@@ -59,10 +58,8 @@ date_default_timezone_set('UTC');
 //date_default_timezone_set($settings['default_timezone']);
 ini_set('session.gc_probability', 1);
 ini_set('session.gc_divisor', 100);
-
 // Session lifetime. After this time stored data will be seen as 'garbage' and cleaned up by the garbage collection process.
 ini_set('session.gc_maxlifetime', 172800); // 48 hours
-
 // Session cookie life time
 ini_set('session.cookie_lifetime', 172800); // 48 hours
 
@@ -146,13 +143,14 @@ define("START_PAGE", substr(preg_replace("#(&amp;|\?)(s_action=edit&amp;shout_id
  * Login / Logout / Revalidate
  */
 if (isset($_POST['login']) && isset($_POST['user_name']) && isset($_POST['user_pass'])) {
-    $auth = new Authenticate($_POST['user_name'], $_POST['user_pass'], (isset($_POST['remember_me']) ? TRUE : FALSE));
-    $userdata = $auth->getUserData();
-    unset($auth, $_POST['user_name'], $_POST['user_pass']);
-    redirect(FUSION_REQUEST);
+    if (\defender::safe()) {
+        $auth = new Authenticate($_POST['user_name'], $_POST['user_pass'], (isset($_POST['remember_me']) ? TRUE : FALSE));
+        $userdata = $auth->getUserData();
+        unset($auth, $_POST['user_name'], $_POST['user_pass']);
+        redirect(FUSION_REQUEST);
+    }
 } elseif (isset($_GET['logout']) && $_GET['logout'] == "yes") {
     $userdata = Authenticate::logOut();
-
     redirect(BASEDIR.$settings['opening_page']);
 } else {
     $userdata = Authenticate::validateAuthUser();
@@ -179,10 +177,9 @@ $language_opts = fusion_get_enabled_languages();
 $enabled_languages = array_keys($language_opts);
 
 // If language change is initiated and if the selected language is valid
-if (isset($_GET['lang'])) {
+if (isset($_GET['lang']) && isset($_GET['lang']) != "" && file_exists(LOCALE.$_GET['lang']."/global.php") && in_array($_GET['lang'], $enabled_languages)) {
     $current_user_language = stripinput($_GET['lang']);
     set_language($current_user_language);
-    //redirect(clean_request('', ['lang'], FALSE));
 } else {
     if (count($enabled_languages) > 1) {
         require __DIR__.'/includes/core_mlang_hub_include.php';
@@ -194,20 +191,20 @@ if (!defined('LANGUAGE') && !defined('LOCALESET')) {
     define('LOCALESET', $current_user_language.'/');
 }
 
+\PHPFusion\Locale::setLocale(LOCALE.LOCALESET.'global.php');
+
 // IP address functions
 include INCLUDES."ip_handling_include.php";
 
 // Error Handling
 require_once INCLUDES."error_handling_include.php";
 
-// Load the Global language file
-include LOCALE.LOCALESET."global.php";
-
 $defender = defender::getInstance();
 
 if (!defined('FUSION_ALLOW_REMOTE')) {
     new \Defender\Token();
 }
+
 \Defender\ImageValidation::ValidateExtensions();
 
 // Define aidlink
@@ -216,7 +213,7 @@ if (iADMIN) {
     define("iAUTH", substr(md5($userdata['user_password'].USER_IP), 16, 16));
     $aidlink = fusion_get_aidlink();
     // Generate a session aid every turn
-    $token_time = time();
+    $token_time = TIME;
     $algo = fusion_get_settings('password_algorithm');
     $key = $userdata['user_id'].$token_time.iAUTH.SECRET_KEY;
     $salt = md5($userdata['user_admin_salt'].SECRET_KEY_SALT);
@@ -231,12 +228,10 @@ if (!isset($_COOKIE[COOKIE_PREFIX.'visited'])) {
 
 $lastvisited = Authenticate::setLastVisitCookie();
 
-
 // Set admin login procedures
 Authenticate::setAdminLogin();
 
-new Dynamics();
-
+$fusion_dynamics = Dynamics::getInstance();
 $fusion_page_head_tags = &\PHPFusion\OutputHandler::$pageHeadTags;
 $fusion_page_footer_tags = &\PHPFusion\OutputHandler::$pageFooterTags;
 $fusion_jquery_tags = &\PHPFusion\OutputHandler::$jqueryTags;
@@ -253,4 +248,8 @@ if ($userdata['user_level'] == USER_LEVEL_SUPER_ADMIN && isset($_GET['themes']) 
 }
 set_theme(empty($userdata['user_theme']) ? fusion_get_settings("theme") : $userdata['user_theme']);
 
+/**
+ * Reduction of 0.04 seconds in performance.
+ * We can use manually include the configuration if needed.
+ */
 \PHPFusion\Installer\Infusion_core::load_Configuration();

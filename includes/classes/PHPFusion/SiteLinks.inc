@@ -587,7 +587,7 @@ class SiteLinks {
                 $li_class = [];
                 $link_data += $default_link_data;
 
-                $link_data['link_name'] = parsesmileys(parseubb($link_data['link_name']));
+                $link_data['link_name'] = fusion_get_settings('link_bbcode') ? parsesmileys(parseubb($link_data['link_name'])) : $link_data['link_name'];
 
                 if (!empty(self::getMenuParam('item_class'))) {
                     $li_class[] = self::getMenuParam('item_class');
@@ -626,6 +626,7 @@ class SiteLinks {
 
                         // The breadcrumbs series of arrays - stable
                         $reference = $this->getLinkInstance();
+
                         if (!empty($reference)) {
 
                             $uri = parse_url(htmlspecialchars_decode($link_data['link_url']));
@@ -727,7 +728,7 @@ class SiteLinks {
                     $link_class = (!empty($link_data['link_class']) ? " class='".$link_data['link_class']."'" : '');
                     $res .= "<li".(!empty($li_class) ? " class='".implode(" ", $li_class)."'" : '').">".self::getMenuParam('seperator');
                     $res .= ($itemlink ? "<a".$l_1.$itemlink.$link_target.$link_class." $tab_index>" : "");
-                    $res .= (!empty($link_data['link_icon']) ? "<i class='".$link_data['link_icon']."'></i>" : "");
+                    $res .= (!empty($link_data['link_icon']) ? "<i class='".$link_data['link_icon']." m-r-5'></i>" : "");
                     $res .= $link_data['link_name']." ".$l_2;
                     $res .= ($itemlink ? "</a>" : '');
                     if ($has_child) {
@@ -735,7 +736,7 @@ class SiteLinks {
                         if (!empty($link_data['link_url']) and $link_data['link_url'] !== "#") {
                             $res .= "<li".(!$itemlink ? " class='no-link'" : '').">\n".self::getMenuParam('seperator');
                             $res .= ($itemlink ? "<a ".$itemlink." ".$link_target.">\n" : '');
-                            $res .= (!empty($link_data['link_icon']) ? "<i class='".$link_data['link_icon']."'></i>\n" : "");
+                            $res .= (!empty($link_data['link_icon']) ? "<i class='".$link_data['link_icon']." m-r-5'></i>\n" : "");
                             $res .= $link_data['link_name'];
                             $res .= ($itemlink ? "\n</a>\n" : '');
                             $res .= "</li>\n";
