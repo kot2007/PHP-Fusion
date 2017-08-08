@@ -100,7 +100,7 @@ class NewsAdmin extends NewsAdminModel {
                 'news_allow_ratings'       => isset($_POST['news_allow_ratings']) ? "1" : "0",
                 'news_language'            => form_sanitizer($_POST['news_language'], '', 'news_language'),
                 'news_image_front_default' => 0,
-                'news_image_align'         => '',
+                'news_image_align'         => form_sanitizer($_POST['news_image_align'], 'pull-left', 'news_image_align'),
             );
 
             if (fusion_get_settings('tinymce_enabled') != 1) {
@@ -599,6 +599,8 @@ class NewsAdmin extends NewsAdminModel {
                     )
                 ).
                 form_select('news_image_align', self::$locale['news_0218'], $this->news_data['news_image_align'], array("options" => $alignOptions, 'inline' => FALSE, 'inner_width' => '100%'));
+        else:
+                echo form_hidden('news_image_align', '', $this->news_data['news_image_align']);
         endif;
         closeside();
 
@@ -1001,7 +1003,7 @@ class NewsAdmin extends NewsAdminModel {
             <?php endif; ?>
         </div>
 
-        <table class="table table-responsive table-striped">
+        <div class="table-responsive"><table class="table table-striped">
             <thead>
             <tr>
                 <td></td>
@@ -1069,7 +1071,7 @@ class NewsAdmin extends NewsAdminModel {
                 </tr>
             <?php endif; ?>
             </tbody>
-        </table>
+        </table></div>
         <?php
         closeform();
     }

@@ -44,7 +44,7 @@ class Members {
         }
         $_GET['orderby'] = isset($_GET['orderby']) ? $_GET['orderby'] : 'active';
         $_GET['sort_order'] = isset($_GET['sort_order']) ? $_GET['sort_order'] : 'ASC';
-        $_GET['search_text'] = isset($_GET['search_text']) ? $_GET['search_text'] : ($_GET['sortby'] != "all" ? $_GET['sortby'] : '');
+        $_GET['search_text'] = isset($_GET['search_text']) ? $_GET['search_text'] : $_GET['sortby'];
     }
 
     public static function getInstance($set_info = TRUE) {
@@ -65,13 +65,9 @@ class Members {
     }
 
     private function getMemberRows() {
-
         $select = !empty(self::$filters['select']) ? ', '.self::$filters['select'] : '';
-
         $condition = !empty(self::$filters['condition']) ? "AND ".self::$filters['condition'] : self::getFilters();
-
         $groupBy = !empty(self::$filters['group_by']) ? self::$filters['group_by'] : 'u.user_id';
-
         $join = !empty(self::$filters['join']) ? self::$filters['join'] : '';
 
         $result = dbquery("
@@ -88,7 +84,7 @@ class Members {
     private static function getFilters() {
         // alpha select condition
         $default_condition = ($_GET['sortby'] == "all" ? "" : " AND user_name LIKE '".stripinput($_GET['sortby'])."%'");
-        return ((isset($_GET['search_text']) && preg_check("/^[-0-9A-Z_@\s]+$/i",
+        return ((isset($_GET['search_text']) && $_GET['search_text'] != 'all' && preg_check("/^[-0-9A-Z_@\s]+$/i",
                                                            $_GET['search_text'])) ? ' AND user_name LIKE "'.stripinput($_GET['search_text']).'%"' : $default_condition);
     }
 
@@ -106,9 +102,9 @@ class Members {
                                           'placeholder' => self::$locale['MEMB_005'],
                                           'append_button' => TRUE,
                                           'append_type' => "submit",
-                                          "append_form_value" => self::$locale['MEMB_006'],
+                                          "append_form_value" => 'search',
                                           "append_value" => "<i class='fa fa-search'></i> ".self::$locale['MEMB_006'],
-                                          "append_button_name" => self::$locale['MEMB_006'],
+                                          "append_button_name" => 'search',
                                           "width" => "260px",
                                           'class' => 'no-border m-b-0'
                                       )
@@ -152,13 +148,13 @@ class Members {
                 'search_form' => $search_form,
             );
 
-            $info['search_table'] = "<table class='table table-responsive table-striped center alphabet-table'>\n<tr>\n";
+            $info['search_table'] = "<div class='table-responsive'><table class='table table-striped center alphabet-table'>\n<tr>\n";
             $info['search_table'] .= "<td rowspan='2' class='tbl2'><a class='strong' href='".BASEDIR."members.php?sortby=all'>".self::$locale['MEMB_014']."</a></td>";
             for ($i = 0; $i < count($info['search_filter']) != ""; $i++) {
                 $info['search_table'] .= "<td align='center' class='tbl1'><div class='small'><a href='".BASEDIR."members.php?sortby=".$info['search_filter'][$i]."'>".$info['search_filter'][$i]."</a></div></td>";
                 $info['search_table'] .= ($i == 17 ? "<td rowspan='2' class='tbl2'><a class='strong' href='".BASEDIR."members.php?sortby=all'>".self::$locale['MEMB_014']."</a></td>\n</tr>\n<tr>\n" : "\n");
             }
-            $info['search_table'] .= "</tr>\n</table>\n";
+            $info['search_table'] .= "</tr>\n</table>\n</div>";
 
             if (self::$rows > 0) {
 
@@ -222,19 +218,12 @@ class Members {
     }
 
     protected static function get_MembersQuery() {
-
         $select = !empty(self::$filters['select']) ? ', '.self::$filters['select'] : '';
-
         $condition = !empty(self::$filters['condition']) ? "AND ".self::$filters['condition'] : self::getFilters();
-
         $groupBy = !empty(self::$filters['group_by']) ? self::$filters['group_by'] : 'u.user_id';
-
         $join = !empty(self::$filters['join']) ? self::$filters['join'] : '';
-
         $limit = isset(self::$filters['limit']) ? self::$filters['limit'] : 24;
-
         $default_sort_order = isset($_GET['sort_order']) ? $_GET['sort_order'] : 'ASC';
-
         $default_sorting = "u.user_level DESC, u.user_language DESC, u.user_name $default_sort_order";
 
         if (isset($_GET['orderby'])) {

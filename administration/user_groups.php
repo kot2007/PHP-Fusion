@@ -233,10 +233,10 @@ class UserGroups {
 
     public function _selectDB($rows, $min) {
         $result = dbquery("SELECT user_id, user_name, user_level, user_avatar, user_status
-			FROM ".DB_USERS."
-			WHERE user_groups REGEXP('^\\\.{$_GET['group_id']}$|\\\.{$_GET['group_id']}\\\.|\\\.{$_GET['group_id']}$')
-			ORDER BY user_level DESC, user_name
-			LIMIT ".intval($rows).", ".$min
+            FROM ".DB_USERS."
+            WHERE user_groups REGEXP('^\\\.{$_GET['group_id']}$|\\\.{$_GET['group_id']}\\\.|\\\.{$_GET['group_id']}$')
+            ORDER BY user_level DESC, user_name
+            LIMIT ".intval($rows).", ".$min
         );
 
         return $result;
@@ -297,7 +297,7 @@ class UserGroups {
         $html .= "<div class='pull-right'><a class='btn btn-success' href='".FUSION_SELF.$aidlink."&amp;section=usergroup_form'><i class='fa fa-plus fa-fw'></i> ".self::$locale['GRP_428']."</a>\n</div>\n";
         $html .= "<div class='overflow-hide'>".sprintf(self::$locale['GRP_424'], $total_rows)."</div>\n";
         $html .= "</div>\n";
-        $html .= "<table class='table table-responsive table-striped'>\n";
+        $html .= "<div class='table-responsive'><table class='table table-striped'>\n";
         $html .= "<thead>\n";
         $html .= "<tr>\n";
 
@@ -340,7 +340,7 @@ class UserGroups {
             $html .= "</tr>\n";
         }
         $html .= "</tfoot>\n";
-        $html .= "</table>\n";
+        $html .= "</table>\n</div>";
 
         return $html;
     }
@@ -390,7 +390,7 @@ class UserGroups {
         $html .= closeform();
         if (!empty(self::$GroupUser)) {
             $html .= openform('add_users_form', 'post', FUSION_SELF.fusion_get_aidlink()."&amp;section=user_form&amp;action=user_edit&amp;group_id=".$_GET['group_id']);
-            $html .= "<table class='table table-striped table-hover table-responsive'>\n";
+            $html .= "<div class='table-responsive'><table class='table table-striped table-hover'>\n";
             $html .= "<thead>\n";
             $html .= "<tr>\n";
             echo "<th>".self::$locale['GRP_446']."</th>\n";
@@ -408,7 +408,7 @@ class UserGroups {
                 $html .= "</tr>\n";
             }
             $html .= "</tbody>\n";
-            $html .= "</table>\n";
+            $html .= "</table>\n</div>";
             $html .= "<div class='spacer-xs'>\n";
             $html .= "<a class='btn btn-default' href='#' onclick=\"javascript:setChecked('add_users_form','groups_add[]',1);return false;\">".self::$locale['GRP_448']."</a>\n";
             $html .= "<a class='btn btn-default' href='#' onclick=\"javascript:setChecked('add_users_form','groups_add[]',0);return false;\">".self::$locale['GRP_449']."</a>\n";
@@ -420,7 +420,7 @@ class UserGroups {
         $html .= "<div class='col-xs-12 col-sm-8'>\n";
 
         if ($rows > 0) {
-            $html .= open_side(self::$locale['GRP_460']);
+            $html .= fusion_get_function('openside', self::$locale['GRP_460']);
             $html .= "<div class='clearfix spacer-xs'>\n";
             $html .= ($total_rows > $rows ? "<div class='pull-right'>\n".makepagenav($rowstart, self::$limit, $total_rows, self::$limit, clean_request("", array("aid", "section"), TRUE)."&amp;")."</div>\n" : "");
             $html .= "<div class='overflow-hide'>".sprintf(self::$locale['GRP_427'], $rows, $total_rows)."</div>\n";
@@ -451,7 +451,7 @@ class UserGroups {
             $html .= "</div>\n";
             $html .= "</div>\n";
             $html .= closeform();
-            $html .= close_side();
+            $html .= fusion_get_function('closeside');
         } else {
             $html .= "<div class='well text-center'>".self::$locale['GRP_463']."</div>\n";
         }

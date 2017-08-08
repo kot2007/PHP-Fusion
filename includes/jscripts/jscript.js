@@ -49,6 +49,24 @@ function flipBox(b) {
     }
 }
 /**
+ * Tool to trim text
+ * Usage:
+ *     data-trim-text='30' - 30 is text length
+ *     $('[data-trim-text]').trim_text(); - function initialization
+ */
+$.fn.trim_text = function() {
+    return this.each(function() {
+        var length = $(this).data("trim-text"), newtext, dots;
+
+        dots = "";
+        if ($(this).text().length > length) dots = "...";
+        newtext = $(this).text().substr(0, length) + dots;
+
+        return $(this).text(newtext);
+    });
+}
+
+/**
  * Tool to scroll the window to a designated ID
  * @param hash - ID only
  */
@@ -336,7 +354,6 @@ function resize_forum_imgs() {
 function setChecked(frmName,chkName,val) {
     dml=document.forms[frmName];
     len=dml.elements.length;
-    console.log(len);
     for(i=0;i<len;i++){
         if(dml.elements[i].name==chkName){
             dml.elements[i].checked=val;

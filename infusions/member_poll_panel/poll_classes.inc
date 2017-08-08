@@ -136,7 +136,7 @@ class MemberPoll {
     }
 
     public function _selectVote($user, $pollid) {
-        $whr = iMEMBER ? "vote_user='".$user."' AND vote_user_ip='".USER_IP."'" : "vote_user_ip='".USER_IP."'";
+        $whr = iMEMBER ? "vote_user='".$user."'" : "vote_user_ip='".USER_IP."'";
         $result = dbquery("SELECT vote_id, vote_user, vote_opt, vote_user_ip, poll_id
             FROM ".DB_POLL_VOTES."
             WHERE poll_id='".$pollid."' AND ".$whr
@@ -263,10 +263,10 @@ class MemberPoll {
                         foreach ($dat['poll_option'] as $im1 => $data1) {
                             $num_votes = $this->_countVote("vote_opt='".$im1."' AND poll_id='".$dat['poll_id']."'");
                             $opt_votes = ($num_votes ? number_format(($num_votes / $info_f['poll_table'][$key]['max_vote']) * 100, 0) : number_format(0 * 100, 0));
-                            $info_f['poll_table'][$key]['poll_option'][] = "<label><input type='radio' name='check' value='".$im1."' /> ".$data1."</label>\n";
+                            $info_f['poll_table'][$key]['poll_option'][] = form_checkbox('check', $data1, '-1', ['reverse_label' => TRUE, 'type' => 'radio', 'value' => $im1]);
                         }
 
-                        $info_f['poll_table'][$key]['poll_foot'][] = form_button("cast_vote", self::$locale['POLL_020'], self::$locale['POLL_020'], array('class' => 'btn-primary m-r-10'));
+                        $info_f['poll_table'][$key]['poll_foot'][] = form_button("cast_vote", self::$locale['POLL_020'], self::$locale['POLL_020'], array('class' => 'btn-primary'));
                         $info_f['poll_table'][$key]['poll_foot'][] = closeform();
                         $i++;
                     }
@@ -434,12 +434,6 @@ class MemberPoll {
         $result = $this->_selectDB($rowstart);
         $rows = dbrows($result);
 
-        echo "<div class='clearfix'>\n";
-        echo "<span>".sprintf(self::$locale['POLL_011'], $rows, $total_rows)."</span>\n";
-        echo "</div>\n";
-
-        echo ($total_rows > $rows) ? makepagenav($rowstart, self::$limit, $total_rows, self::$limit, FUSION_SELF."?") : "";
-
         if ($rows > 0) {
             echo "<div class='row m-t-20'>\n";
             while ($data = dbarray($result)) {
@@ -470,7 +464,7 @@ class MemberPoll {
                 echo "</div>\n";
 
                 echo "<div class='panel-footer'>\n";
-                echo "<p class='m-b-0'><strong>".self::$locale['POLL_060'].$db_info."</strong></p>\n";
+                echo "<p class='m-b-0'><strong>".self::$locale['POLL_060'].' '.$db_info."</strong></p>\n";
                 echo "<p class='m-b-0'>".self::$locale['POLL_048']." ".showdate("shortdate", $data['poll_started'])."</p>\n";
                 echo "<p class='display-inline-block badge class='m-b-0''>".self::$locale['POLL_064'].' '.($data['poll_started'] > time() ? self::$locale['POLL_065'] : (!empty($data['poll_ended']) && ($data['poll_ended'] < time()) ? self::$locale['POLL_024'] : self::$locale['POLL_067']))."</p>\n";
 
@@ -481,6 +475,8 @@ class MemberPoll {
                 echo "</div>\n";
                 echo "</div>\n"; // .col-xs-12
             }
+
+            echo ($total_rows > $rows) ? '<div class="text-center">'.makepagenav($rowstart, self::$limit, $total_rows, self::$limit, FUSION_SELF."?").'</div>' : "";
             echo "</div>\n";
         } else {
             echo "<div class='well text-center'>".self::$locale['POLL_012']."</div>\n";
@@ -507,7 +503,7 @@ class MemberPoll {
                     'vote_user'         => iMEMBER ? fusion_get_userdata('user_id') : 0,
                     'vote_user_ip'      => USER_IP,
                     'vote_user_ip_type' => USER_IP_TYPE,
-                    'vote_opt'          => stripinput($_POST['check']),
+                    'vote_opt'          => form_sanitizer($_POST['check'], 0, 'check'),
                     'poll_id'           => intval($_POST['poll_id'])
                 );
 

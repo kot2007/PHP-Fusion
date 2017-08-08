@@ -17,13 +17,14 @@
 | written permission from the original author(s).
 +--------------------------------------------------------*/
 require_once dirname(__FILE__)."../../../../maincore.php";
+$settings = fusion_get_settings();
+if (file_exists(INFUSIONS."rss_feeds_panel/locale/".LANGUAGE.".php")) {
+    $locale += fusion_get_locale("", INFUSIONS."rss_feeds_panel/locale/".LANGUAGE.".php");
+} else {
+    $locale += fusion_get_locale("", INFUSIONS."rss_feeds_panel/locale/English.php");
+}
 header('Content-Type: application/rss+xml; charset='.$locale['charset'].'');
 
-if (file_exists(INFUSIONS."rss_feeds_panel/locale/".LANGUAGE.".php")) {
-    include INFUSIONS."rss_feeds_panel/locale/".LANGUAGE.".php";
-} else {
-    include INFUSIONS."rss_feeds_panel/locale/English.php";
-}
 
 if (db_exists(DB_NEWS)) {
     $result = dbquery("SELECT * FROM ".DB_NEWS." WHERE ".groupaccess('news_visibility').(multilang_table("NS") ? " AND news_language='".LANGUAGE."'" : "")."	ORDER BY news_datestamp DESC LIMIT 0,10");
@@ -42,7 +43,7 @@ if (db_exists(DB_NEWS)) {
             $rsid = intval($row['news_id']);
             $rtitle = $row['news_subject'];
             $description = stripslashes(nl2br($row['news_news']));
-            $description = strip_tags($description, "<a><p><br /><br /><hr />");
+            $description = strip_tags($description, "<a><p><br /><hr />");
             echo "<item>\n";
             echo "<title>".htmlspecialchars($rtitle)."</title>\n";
             echo "<link>".$settings['siteurl']."infusions/news/news.php?readmore=".$rsid."</link>\n";

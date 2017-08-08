@@ -17,14 +17,14 @@
 | written permission from the original author(s).
 +--------------------------------------------------------*/
 require_once dirname(__FILE__)."../../../../maincore.php";
-
+$settings = fusion_get_settings();
+if (file_exists(INFUSIONS."rss_feeds_panel/locale/".LANGUAGE.".php")) {
+    $locale += fusion_get_locale("", INFUSIONS."rss_feeds_panel/locale/".LANGUAGE.".php");
+} else {
+    $locale += fusion_get_locale("", INFUSIONS."rss_feeds_panel/locale/English.php");
+}
 header('Content-Type: application/rss+xml; charset='.$locale['charset'].'');
 
-if (file_exists(INFUSIONS."rss_feeds_panel/locale/".LANGUAGE.".php")) {
-    include INFUSIONS."rss_feeds_panel/locale/".LANGUAGE.".php";
-} else {
-    include INFUSIONS."rss_feeds_panel/locale/English.php";
-}
 
 if (db_exists(DB_BLOG)) {
 
@@ -50,7 +50,7 @@ if (db_exists(DB_BLOG)) {
             $rsid = intval($row['blog_id']);
             $rtitle = $row['blog_subject'];
             $description = stripslashes(nl2br($row['blog_blog']));
-            $description = strip_tags($description, "<a><p><br /><br /><hr />");
+            $description = strip_tags($description, "<a><p><br /><hr />");
             echo "<item>\n";
             echo "<title>".htmlspecialchars($rtitle)."</title>\n";
             echo "<link>".$settings['siteurl']."infusions/blog/blog.php?readmore=".$rsid."</link>\n";

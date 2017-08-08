@@ -93,6 +93,10 @@ function form_fileinput($input_name, $label = '', $input_value = FALSE, array $o
     if (\defender::inputHasError($input_name)) {
         $error_class = "has-error ";
         if (!empty($options['error_text'])) {
+            $new_error_text = \defender::getErrorText($input_name);
+            if (!empty($new_error_text)) {
+                $options['error_text'] = $new_error_text;
+            }
             addNotice("danger", "<strong>$title</strong> - ".$options['error_text']);
         }
     }
@@ -292,7 +296,7 @@ function form_fileinput($input_name, $label = '', $input_value = FALSE, array $o
                 ".($value ? "initialPreview: ".$value.", " : '')."
                 ".($options['preview_off'] ? "showPreview: false, " : '')."
                 defaultPreviewContent: '<img class=\"img-responsive\" src=\"".IMAGES."no_photo.png\" alt=\"".$browseLabel."\" style=\"width:100%;\">',
-                browseClass: 'btn btn-sm btn-block btn-default',
+                browseClass: 'btn btn-block btn-default',
                 uploadClass: 'btn btn-modal',
                 captionClass : '',
                 maxFileCount: '".$options['max_count']."',

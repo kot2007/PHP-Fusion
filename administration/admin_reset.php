@@ -44,7 +44,7 @@ class admin_reset_admin {
                 break;
         }
 
-	   \PHPFusion\BreadCrumbs::getInstance()->addBreadCrumb(['link'=> ADMIN.'admin_reset.php'.fusion_get_aidlink(), "title"=> self::$locale['apw_title']]);
+       \PHPFusion\BreadCrumbs::getInstance()->addBreadCrumb(['link'=> ADMIN.'admin_reset.php'.fusion_get_aidlink(), "title"=> self::$locale['apw_title']]);
         self::set_adminsdb();
     }
 
@@ -141,7 +141,7 @@ class admin_reset_admin {
 
                 $sucess_ids = "";
                 $failed_ids = "";
-                $text = "<table class='table table-hover table-striped'>\n";
+                $text = "<div class='table-responsive'><table class='table table-hover table-striped'>\n";
                     if (!empty($reset_success)) {
                         foreach ($reset_success as $key => $info) {
                             $sucess_ids .= $sucess_ids != "" ? ".".$info['user_id'] : $info['user_id'];
@@ -162,7 +162,7 @@ class admin_reset_admin {
                         }
                     }
 
-                $text .= "</table>\n";
+                $text .= "</table>\n</div>";
                 $preview_html = openmodal('apw_preview', self::$locale['apw_410']);
                 $preview_html .= "<p>".$text."</p>\n";
                 $preview_html .= closemodal();
@@ -248,11 +248,11 @@ class admin_reset_admin {
 
             $tab_title['title'][] = self::$locale['apw_415'];
             $tab_title['id'][] = 'adminreset_list';
-			$tab_title['icon'][] = "";
+            $tab_title['icon'][] = "";
 
             $tab_title['title'][] = self::$locale['apw_title'];
             $tab_title['id'][] = 'adminreset_form';
-			$tab_title['icon'][] = "";
+            $tab_title['icon'][] = "";
 
             echo opentab($tab_title, $_GET['section'], 'adminreset_list', TRUE);
             switch ($_GET['section']) {
@@ -270,9 +270,10 @@ class admin_reset_admin {
     public function admin_reset_listing() {
         $all_admin_reset = self::load_all_admin_reset();
 
-        opentable(self::$locale['apw_415']);
+        echo '<div class="m-t-15">';
+            echo '<h2>'.self::$locale['apw_415'].'</h2>';
             if (!empty($all_admin_reset)) {
-                echo "<table class='table table-hover table-striped'>\n";
+                echo "<div class='table-responsive'><table class='table table-hover table-striped'>\n";
                 echo "<tr>\n";
                 echo "<td class='col-xs-2'><strong>".self::$locale['apw_417']."</strong></td>\n";
                 echo "<td class='col-xs-2'><strong>".self::$locale['apw_418']."</strong></td>\n";
@@ -296,22 +297,23 @@ class admin_reset_admin {
                     echo "<td class='col-xs-2'><a id='confirm' class='btn btn-default btn-sm' href='".FUSION_SELF.fusion_get_aidlink()."&amp;section=adminreset_list&amp;action=delete&amp;reset_id=".$info['reset_id']."' onclick=\"return confirm('".self::$locale['apw_428']."');\">".self::$locale['delete']."<i class='fa fa-trash m-l-10'></i></a></td>\n";
                     echo "</tr>\n";
                 }
-                echo "</table>\n";
+                echo "</table>\n</div>";
             } else {
                 echo "<div class='well text-center'>".self::$locale['apw_426']."</div>\n";
             }
-        closetable();
+        echo '</div>';
     }
 
     public function admin_reset_form() {
         fusion_confirm_exit();
-        openside('');
+        openside('', 'm-t-15');
             echo openform('admin_reset', 'post', FUSION_SELF.fusion_get_aidlink()."&amp;section=adminreset_form");
             echo form_select('reset_admin', self::$locale['apw_400'], '', array(
                 'required' => TRUE,
                 'options' => self::load_admins(),
                 'placeholder' => self::$locale['choose'],
-                'allowclear' => TRUE
+                'allowclear' => TRUE,
+                'inline' => TRUE
             ));
 
             echo form_textarea('reset_message', self::$locale['apw_404'], '', array('required' => TRUE, 'autosize' => TRUE));

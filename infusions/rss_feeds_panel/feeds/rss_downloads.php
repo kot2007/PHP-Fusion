@@ -17,14 +17,14 @@
 | written permission from the original author(s).
 +--------------------------------------------------------*/
 require_once dirname(__FILE__)."../../../../maincore.php";
-
+$settings = fusion_get_settings();
+if (file_exists(INFUSIONS."rss_feeds_panel/locale/".LANGUAGE.".php")) {
+    $locale += fusion_get_locale("", INFUSIONS."rss_feeds_panel/locale/".LANGUAGE.".php");
+} else {
+    $locale += fusion_get_locale("", INFUSIONS."rss_feeds_panel/locale/English.php");
+}
 header('Content-Type: application/rss+xml; charset='.$locale['charset'].'');
 
-if (file_exists(INFUSIONS."rss_feeds_panel/locale/".LANGUAGE.".php")) {
-    include INFUSIONS."rss_feeds_panel/locale/".LANGUAGE.".php";
-} else {
-    include INFUSIONS."rss_feeds_panel/locale/English.php";
-}
 
 if (db_exists(DB_DOWNLOADS) && db_exists(DB_DOWNLOAD_CATS)) {
     $result = dbquery("SELECT tbl1.*, tbl2.* FROM ".DB_DOWNLOAD_CATS." tbl1
@@ -44,7 +44,7 @@ if (db_exists(DB_DOWNLOADS) && db_exists(DB_DOWNLOAD_CATS)) {
             $rsid = intval($row['download_id']);
             $rtitle = $row['download_title'];
             $description = stripslashes(nl2br($row['download_description']));
-            $description = strip_tags($description, "<a><p><br /><br /><hr />");
+            $description = strip_tags($description, "<a><p><br /><hr />");
             echo "<item>\n<title>".htmlspecialchars($rtitle)."</title>\n";
             echo "<link>".$settings['siteurl']."infusions/downloads/downloads.php?download_id=".$rsid."</link>\n";
             echo "<description><![CDATA[".html_entity_decode($description)."]]></description>\n";

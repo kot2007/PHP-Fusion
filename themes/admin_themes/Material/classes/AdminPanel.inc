@@ -17,11 +17,21 @@
 +--------------------------------------------------------*/
 namespace Material;
 
-use PHPFusion\Admins;
+use \PHPFusion\Admins;
+use \PHPFusion\OutputHandler;
 
+/**
+ * Class AdminPanel
+ * @package Material
+ */
 class AdminPanel extends Components {
     public function __construct() {
-        self::AddTo();
+        OutputHandler::addToHead('<script type="text/javascript" src="'.MATERIAL.'assets/js/scripts.min.js"></script>');
+        OutputHandler::addToHead('<link rel="stylesheet" href="'.MATERIAL.'assets/scrollbar/jquery.mCustomScrollbar.min.css"/>');
+        OutputHandler::addToFooter('<script type="text/javascript" src="'.INCLUDES.'jquery/jquery.cookie.js"></script>');
+        OutputHandler::addToFooter('<script type="text/javascript" src="'.MATERIAL.'assets/scrollbar/jquery.mCustomScrollbar.min.js"></script>');
+        OutputHandler::addToFooter('<script type="text/javascript">$(".sidebar, .messages-box").mCustomScrollbar({theme: "minimal-dark", axis: "y", scrollInertia: 100, mouseWheel: {enable: !0, axis: "y", preventDefault: !0}});</script>');
+        OutputHandler::addToJquery('$(".sidebar-sm .admin-submenu, .sidebar-sm .search-box").mCustomScrollbar({theme: "minimal-dark", axis: "y", scrollInertia: 100, mouseWheel: {enable: !0, axis: "y", preventDefault: !0}});');
 
         $sections = Admins::getInstance()->getAdminSections();
 
@@ -63,10 +73,7 @@ class AdminPanel extends Components {
                 }
             echo '</div>';
 
-            if (self::IsMobile()) {
-                // Mobile
-            } else {
-                // PC
+            if (!self::IsMobile()) {
                 self::MessagesBox();
                 self::ThemeSettings();
             }
@@ -74,15 +81,6 @@ class AdminPanel extends Components {
 
         echo '<div id="backtotop"><div class="btn btn-primary"><i class="fa fa-chevron-up"></i></div></div>';
         echo '<div class="overlay"></div>';
-    }
-
-    private static function AddTo() {
-        add_to_footer('<script type="text/javascript" src="'.INCLUDES.'jquery/jquery.cookie.js"></script>');
-        add_to_head('<script type="text/javascript" src="'.MATERIAL.'assets/js/scripts.min.js"></script>');
-        add_to_head('<link rel="stylesheet" href="'.MATERIAL.'assets/scrollbar/jquery.mCustomScrollbar.min.css"/>');
-        add_to_footer('<script type="text/javascript" src="'.MATERIAL.'assets/scrollbar/jquery.mCustomScrollbar.min.js"></script>');
-        add_to_footer('<script type="text/javascript">$(".sidebar, .messages-box").mCustomScrollbar({theme: "minimal-dark", axis: "y", scrollInertia: 100, mouseWheel: {enable: !0, axis: "y", preventDefault: !0}});</script>');
-        add_to_jquery('$(".sidebar-sm .admin-submenu, .sidebar-sm .search-box").mCustomScrollbar({theme: "minimal-dark", axis: "y", scrollInertia: 100, mouseWheel: {enable: !0, axis: "y", preventDefault: !0}});');
     }
 
     private static function TopMenu() {

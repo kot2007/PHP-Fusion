@@ -21,60 +21,42 @@ if (!defined("IN_FUSION")) {
     die("Access Denied");
 }
 
-function open_table($title = '') {
-    static $opentable = '';
-    if (empty($opentable)) {
-        ob_start();
-        opentable($title);
-        $opentable = ob_get_contents();
-        ob_end_clean();
-        if (empty($opentable)) {
-            $opentable = opentable($title);
-        }
-    }
-    return $opentable;
+/**
+ * Load a HTML template
+ *
+ * @param $source_file
+ *
+ * @return string
+ */
+function fusion_get_template($source_file) {
+    ob_start();
+    include $source_file;
+
+    return ob_get_clean();
 }
 
-function close_table($title = '') {
-    static $closetable = '';
-    if (empty($closetable)) {
-        ob_start();
-        closetable($title);
-        $closetable = ob_get_contents();
-        ob_end_clean();
-        if (empty($closetable)) {
-            $closetable = opentable($title);
-        }
+/**
+ * Load any function
+ *
+ * @param $function
+ *
+ * @return mixed|string
+ */
+function fusion_get_function($function) {
+    $function_args = func_get_args();
+    if (count($function_args) > 1) {
+        unset($function_args[0]);
     }
-    return $closetable;
-}
+    // Attempt to check if this function prints anything
+    ob_start();
+    $func = call_user_func_array($function, $function_args);
+    $content = ob_get_clean();
+    // If it does not print return the function results
+    if (empty($content)) {
+        return $func;
+    }
 
-function open_side($title = '') {
-    static $openside = '';
-    if (empty($closetable)) {
-        ob_start();
-        openside($title);
-        $openside = ob_get_contents();
-        ob_end_clean();
-        if (empty($openside)) {
-            $openside = openside($title);
-        }
-    }
-    return $openside;
-}
-
-function close_side($title = '') {
-    static $closeside = '';
-    if (empty($closeside)) {
-        ob_start();
-        closeside($title);
-        $closeside = ob_get_contents();
-        ob_end_clean();
-        if (empty($closeside)) {
-            $closeside = closeside($title);
-        }
-    }
-    return $closeside;
+    return $content;
 }
 
 // Render breadcrumbs template
@@ -88,6 +70,7 @@ if (!function_exists("render_breadcrumbs")) {
             $html .= "</li>\n";
         }
         $html .= "</ol>\n";
+
         return $html;
     }
 }
@@ -96,7 +79,7 @@ if (!function_exists('render_favicons')) {
     function render_favicons($folder = IMAGES) {
         $html = "";
         /* Src: http://realfavicongenerator.net/favicon_result?file_id=p1avd9jap61od55nq1l2e1e2q7q76#.WAbP6I995D8 */
-		if (file_exists($folder)) {
+        if (file_exists($folder)) {
             $html .= "<link rel='apple-touch-icon' sizes='144x144' href='".$folder."favicons/apple-touch-icon.png'>\n";
             $html .= "<link rel='icon' type='image/png' href='".$folder."favicons/favicon-32x32.png' sizes='32x32'>\n";
             $html .= "<link rel='icon' type='image/png' href='".$folder."favicons/favicon-16x16.png' sizes='16x16'>\n";
@@ -105,32 +88,40 @@ if (!function_exists('render_favicons')) {
             $html .= "<meta name='theme-color' content='#ffffff'>\n";
 
         }
+
         return $html;
     }
 }
 
 if (!function_exists('render_user_tags')) {
     /**
-     * The callback function for parseUser()
+     * The callback function for fusion_parse_user()
+     *
      * @global array $locale
+     *
      * @param string $m The message
+     *
      * @return string
      */
     function render_user_tags($m) {
         $locale = fusion_get_locale();
         add_to_jquery("$('[data-toggle=\"user-tooltip\"]').popover();");
         $user = str_replace('@', '', $m[0]);
-        $result = dbquery("SELECT user_id, user_name, user_level, user_status, user_avatar FROM ".DB_USERS." WHERE user_name='".$user."' or user_name='".ucwords($user)."' or user_name='".strtolower($user)."' AND user_status='0' LIMIT 1");
+        $result = dbquery("SELECT user_id, user_name, user_level, user_status, user_avatar
+        		FROM ".DB_USERS."
+        		WHERE user_name='".$user."' OR user_name='".ucwords($user)."' OR user_name='".strtolower($user)."' AND user_status='0'
+        		LIMIT 1
+        	");
         if (dbrows($result) > 0) {
             $data = dbarray($result);
-            $src = ($data['user_avatar'] && file_exists(IMAGES."avatars/".$data['user_avatar'])) ? $src = IMAGES."avatars/".$data['user_avatar'] : IMAGES."avatars/no-avatar.jpg";
-            $title = '<div class="user-tooltip"><div class="pull-left m-r-10"><img class="img-responsive" style="max-height:40px; max-width:40px;" src="'.$src.'"></div><div class="clearfix"><a title="'.sprintf($locale['go_profile'], $data['user_name']).'" class="strong profile-link strong m-b-10" href="'.BASEDIR.'profile.php?lookup='.$data['user_id'].'">'.$data['user_name'].'</a><br/><span class="user_level">'.getuserlevel($data['user_level']).'</span></div>';
-            $content = '<a class="btn btn-block btn-primary" href="'.BASEDIR.'messages.php?msg_send='.$data['user_id'].'">'.$locale['send_message'].'</a>';
-            $html = "<a class='strong pointer' tabindex='0' role='button' data-html='true' data-trigger='focus' data-placement='top' data-toggle='user-tooltip' title='".$title."' data-content='".$content."'>";
+            $title = "<div class='user-tooltip'><div class='pull-left m-r-10'>".display_avatar($data, '50px', '', FALSE, '')."</div><div class='clearfix'>".profile_link($data['user_id'], $data['user_name'], $data['user_status'])."<br/><span class='user_level'>".getuserlevel($data['user_level'])."</span></div>";
+            $content = $m[1]."<a class='btn btn-block btn-primary' href='".BASEDIR."messages.php?msg_send=".$data['user_id']."'>".$locale['send_message']."</a>";
+            $html = '<a class="strong pointer" tabindex="0" role="button" data-html="true" data-trigger="focus" data-placement="top" data-toggle="user-tooltip" title="'.$title.'" data-content="'.$content.'">';
             $html .= "<span class='user-label'>".$m[0]."</span>";
             $html .= "</a>\n";
             return $html;
         }
+
         return $m[0];
     }
 }
